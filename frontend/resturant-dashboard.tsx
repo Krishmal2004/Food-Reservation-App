@@ -15,6 +15,7 @@ import {
   KeyboardAvoidingView,
   TouchableWithoutFeedback
 } from 'react-native';
+import { launchImageLibrary, ImageLibraryOptions } from 'react-native-image-picker';
 
 // Mock Data
 const INITIAL_RESERVATIONS = [
@@ -44,14 +45,19 @@ const CUSTOMER_FEEDBACKS = [
   { id: '2', customer: 'Charlie Brown', text: 'Delivery was a bit late, but good.', rating: 4, date: 'Oct 15, 2024' },
 ];
 
-const RestaurantDashboard = ({ navigation }: { navigation: any }) => {
+// ADDED "route" TO PROPS TO GET LOGIN DATA
+const RestaurantDashboard = ({ route, navigation }: { route: any, navigation: any }) => {
+  
+  // 1. Get restaurant ID and Details passed from Login screen
+  const loggedInRestaurantId = route?.params?.resturantId || '';
+  
   const [packages, setPackages] = useState(INITIAL_FOOD_PACKAGES);
   const [reservations, setReservations] = useState(INITIAL_RESERVATIONS);
   
-  // Profile State
+  // 2. Map Profile State from Login params
   const [profile, setProfile] = useState({
-    name: 'Italian Bistro',
-    email: 'contact@italianbistro.com',
+    name: route?.params?.restaurantName || 'Italian Bistro',
+    email: route?.params?.email || 'contact@italianbistro.com',
     password: 'password123'
   });
   
@@ -71,7 +77,7 @@ const RestaurantDashboard = ({ navigation }: { navigation: any }) => {
   // Profile functions
   const handleLogout = () => {
     setProfileMenuVisible(false);
-    // navigation.navigate('Login' or similar);
+    navigation.navigate('RestaurantLogin'); // Adjust to your login route name
     Alert.alert("Logged Out", "You have been logged out successfully.");
   };
 
@@ -101,28 +107,94 @@ const RestaurantDashboard = ({ navigation }: { navigation: any }) => {
     setPkgModalVisible(true);
   };
 
-  const handleMockUploadPhoto = () => {
-    // In a real app, you would use Image Picker
-    Alert.alert("Upload Photo", "Simulating photo upload...");
-    setPkgState(prev => ({ ...prev, image: 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?q=80&w=2070' }));
+  // 3. NEW FUNCTION TO PICK IMAGE FROM PHONE
+  const handleUploadPhoto = () => {
+    const options: ImageLibraryOptions = {
+      mediaType: 'photo',
+      includeBase64: true,
+      quality: 0.2,
+    }
+
+    launchImageLibrary(options, (response) => {
+      if (response.didCancel) {
+        // User cancelled image picker
+        return;
+      } else if (response.errorCode) {
+        Alert.alert('Error', 'ImagePicker Error: ' + response.errorMessage);
+        return;
+      }
+
+      if (response.assets && response.assets.length > 0) {
+        const asset = response.assets[0];
+        // Create the base64 string
+        const base64Image = `data:${asset.type || 'image/jpeg'};base64,${asset.base64}`;
+        setPkgState(prev => ({ ...prev, image: base64Image }));
+      }
+    });
   };
 
-  const handleSavePackage = () => {
+  // 4. UPDATED SAVE PACKAGE LOGIC
+  const handleSavePackage = async () => {
     if (!pkgState.title || !pkgState.price) {
       Alert.alert("Error", "Please fill out title and price.");
       return;
     }
-    const finalImage = pkgState.image || 'https://images.unsplash.com/photo-1540189549336-e6e99c3679fe?auto=format&fit=crop&q=80&w=1000';
-    if (editingPackage) {
-      setPackages(packages.map(p => 
-        p.id === editingPackage.id 
-          ? { ...p, ...pkgState, image: finalImage } 
-          : p
-      ));
-    } else {
-      setPackages([...packages, { id: Math.random().toString(), ...pkgState, image: finalImage }]);
+
+    if (!loggedInRestaurantId) {
+      Alert.alert("Error", "Restaurant ID not found. Please log out and log in again.");
+      return;
     }
-    setPkgModalVisible(false);
+
+    const finalNote = pkgState.note || 'No description provided';
+    const finalImage = pkgState.image || 'https://images.unsplash.com/photo-1540189549336-e6e99c3679fe?auto=format&fit=crop&q=80&w=1000';
+    
+    try {
+      const response = await fetch('http://10.0.2.2:5000/api/resturant/create-food-package',{
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          resturantId: loggedInRestaurantId, // Send ID here
+          title: pkgState.title,
+          price: pkgState.price,
+          note: finalNote,
+          image: finalImage
+        }),
+      });
+      
+      const data = await response.json();
+      
+      // FIXED RESPONSE.OK LOGIC
+      if(response.ok) {
+        if(editingPackage) {
+          // If editing an existing package
+          setPackages(packages.map(p => 
+            p.id === editingPackage.id 
+              ? { ...p, ...pkgState, image: finalImage } 
+              : p
+          ));
+        } else {
+          // Add newly created package to UI
+          setPackages([...packages, data.foodPackage || { id: Math.random().toString(), ...pkgState, image: finalImage }]);
+        }
+        setPkgModalVisible(false);
+        Alert.alert("Success", editingPackage ? "Food package updated successfully!" : "Food package created successfully!");
+      } else {
+        Alert.alert("Error", data.message || "Failed to save package. Please try again.");
+      }
+    } catch (error) {
+      console.error('Package save error:', error);
+      Alert.alert("Network Error", "Could not connect to the server. Changes will be local only.");
+      
+      // Fallback for local changes if server is down
+      if (editingPackage) {
+        setPackages(packages.map(p => p.id === editingPackage.id ? { ...p, ...pkgState, image: finalImage } : p));
+      } else {
+        setPackages([...packages, { id: Math.random().toString(), ...pkgState, image: finalImage }]);
+      }
+      setPkgModalVisible(false);
+    };
   };
 
   // Reservation functions
@@ -297,8 +369,9 @@ const RestaurantDashboard = ({ navigation }: { navigation: any }) => {
                 {pkgState.image ? (
                   <Image source={{ uri: pkgState.image }} style={styles.previewImage} />
                 ) : null}
-                <TouchableOpacity style={styles.uploadBtn} onPress={handleMockUploadPhoto}>
-                  <Text style={styles.uploadBtnText}>{pkgState.image ? 'Change Photo' : 'Upload Photo'}</Text>
+                {/* 5. UPDATED BUTTON TO TRIGGER UPLOAD FROM PHONE */}
+                <TouchableOpacity style={styles.uploadBtn} onPress={handleUploadPhoto}>
+                  <Text style={styles.uploadBtnText}>{pkgState.image ? 'Change Photo from Gallery' : 'Upload Photo from Gallery'}</Text>
                 </TouchableOpacity>
               </ScrollView>
 

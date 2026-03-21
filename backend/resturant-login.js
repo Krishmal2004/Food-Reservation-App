@@ -48,6 +48,7 @@ router.post('/register-restaurant', async (req,res)=>{
         res.status(201).json({
             message: 'Resturant registered successfully',
             resturant: {
+                id: newResturant._id,
                 restaurantName: newResturant.restaurantName,
                 email: newResturant.email,
                 password: newResturant.password,
@@ -77,6 +78,7 @@ router.post('/restaurant-login', async (req,res)=>{
         res.status(200).json({
             message: 'Login successful',
             resturant: {
+                id: existingResturant._id,
                 restaurantName: existingResturant.restaurantName,
                 email: existingResturant.email,
             }

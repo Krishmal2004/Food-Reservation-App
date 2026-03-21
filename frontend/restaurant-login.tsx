@@ -38,7 +38,11 @@ const RestaurantLogin = ({ navigation }: { navigation: any }) => {
       const data = await response.json();
       if(response.ok) {
         Alert.alert('Success', 'Logged in successfully!');
-        navigation.navigate('RestaurantDashboard');
+        navigation.navigate('RestaurantDashboard',{
+          resturantId: data.resturant.id || data.resturant._id,
+          restaurantName: data.resturant.restaurantName,
+          email: data.resturant.email
+        });
       } else {
         Alert.alert('Login Failed', data.message || 'Invalid email or password');
       }
