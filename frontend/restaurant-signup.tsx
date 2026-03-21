@@ -11,20 +11,49 @@ import {
   Platform,
   ScrollView,
   useWindowDimensions,
+  Alert,
 } from 'react-native';
 
 const RestaurantSignup = ({ navigation }: { navigation: any }) => {
   const [restaurantName, setRestaurantName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [isLoading, setIsloading] = useState(false);
 
   const { width, height } = useWindowDimensions();
 
-  const handleSignup = () => {
-    // Handle the signup logic for restaurant here
-    console.log('Restaurant Signup submitted:', { restaurantName, email, password });
+  const handleSignup = async() => {
+      if(!restaurantName || !email || !password) {
+        Alert.alert('Validation Error', 'Please fill in all fields');
+        return;
+      }
+    setIsloading(true);
+    try {
+      const response = await fetch('http://10.0.2.2:5000/api/auth/register-restaurant', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          restaurantName,
+          email,
+          password,
+        }),
+      });
+      const data = await response.json();
+      if(response.ok) {
+        Alert.alert('Success', 'Restaurant account created successfully!');
+        navigation.navigate('RestaurantLogin');
+      } else {
+        Alert.alert('Signup Failed', data.message || 'Something went wrong');
+      }
+    } catch (error) {
+      console.error('Signup error:', error);
+      Alert.alert('Network Error', 'Could not connect to the server. Please check your connection.');
+    } finally {
+      setIsloading(false);
+    }
   };
-
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />

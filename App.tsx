@@ -11,6 +11,7 @@ import UserDashboard from './frontend/user-dashboard';
 import UserProfileEdit from './frontend/user-profile-edit';
 import RestaurantSignup from './frontend/restaurant-signup';
 import RestaurantLogin from './frontend/restaurant-login';
+import RestaurantDashboard from './frontend/resturant-dashboard';
 const Stack = createNativeStackNavigator();
 
 const App = () => {
@@ -50,6 +51,11 @@ const App = () => {
         <Stack.Screen
           name="RestaurantLogin"
           component={RestaurantLogin}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="RestaurantDashboard"
+          component={RestaurantDashboard}
           options={{ headerShown: false }}
         />
       </Stack.Navigator>

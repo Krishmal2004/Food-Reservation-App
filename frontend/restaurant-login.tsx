@@ -11,6 +11,7 @@ import {
   Platform,
   ScrollView,
   useWindowDimensions,
+  Alert,
 } from 'react-native';
 
 const RestaurantLogin = ({ navigation }: { navigation: any }) => {
@@ -18,10 +19,35 @@ const RestaurantLogin = ({ navigation }: { navigation: any }) => {
   const [password, setPassword] = useState('');
 
   const { width, height } = useWindowDimensions();
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleLogin = () => {
-    // Handle the login logic for restaurant here
-    console.log('Restaurant Login submitted:', { email, password });
+  const handleLogin = async () => {
+    if(!email || !password) {
+      Alert.alert('Validation Error', 'Please enter both email and password');
+      return;
+    }
+    setIsLoading(true);
+    try {
+      const response = await fetch('http://10.0.2.2:5000/api/auth/restaurant-login',{
+        method: 'POST',
+        headers: {
+          'content-Type': 'application/json'
+        },
+        body: JSON.stringify({ email, password })
+      });
+      const data = await response.json();
+      if(response.ok) {
+        Alert.alert('Success', 'Logged in successfully!');
+        navigation.navigate('RestaurantDashboard');
+      } else {
+        Alert.alert('Login Failed', data.message || 'Invalid email or password');
+      }
+    } catch (error) {
+      console.error('Error logging in restaurant:', error);
+      Alert.alert('Login Error', 'An error occurred while trying to log in.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
