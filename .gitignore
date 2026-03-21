@@ -73,3 +73,12 @@ yarn-error.log
 !.yarn/releases
 !.yarn/sdks
 !.yarn/versions
+backend/.env
+package-lock.json
+package-lock.json
+package-lock.json
+backend/package.json
+package.json
+package-lock.json
+package-lock.json
+package.json
