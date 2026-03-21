@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   StyleSheet,
   View,
@@ -13,6 +13,8 @@ import {
 const { width, height } = Dimensions.get('window');
 
 const LandingPage = ({ navigation }: { navigation: any }) => {
+  const [showRoles, setShowRoles] = useState(false);
+
   return (
     <View style={styles.container}>
       <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
@@ -34,21 +36,33 @@ const LandingPage = ({ navigation }: { navigation: any }) => {
               </View>
 
               <View style={styles.buttonContainer}>
-                <TouchableOpacity 
-                  style={styles.loginButton}
-                  activeOpacity={0.8}
-                  onPress={() => { navigation.navigate('Login') }}
-                >
-                  <Text style={styles.loginButtonText}>Login</Text>
-                </TouchableOpacity>
+                {!showRoles ? (
+                  <TouchableOpacity 
+                    style={styles.loginButton}
+                    activeOpacity={0.8}
+                    onPress={() => setShowRoles(true)}
+                  >
+                    <Text style={styles.loginButtonText}>Get Started</Text>
+                  </TouchableOpacity>
+                ) : (
+                  <>
+                    <TouchableOpacity 
+                      style={styles.loginButton}
+                      activeOpacity={0.8}
+                      onPress={() => { navigation.navigate('Login') }}
+                    >
+                      <Text style={styles.loginButtonText}>Customer</Text>
+                    </TouchableOpacity>
 
-                <TouchableOpacity 
-                  style={styles.signupButton}
-                  activeOpacity={0.8}
-                  onPress={() => {  navigation.navigate('Signup')  }}
-                >
-                  <Text style={styles.signupButtonText}>Create an Account</Text>
-                </TouchableOpacity>
+                    <TouchableOpacity 
+                      style={styles.signupButton}
+                      activeOpacity={0.8}
+                      onPress={() => { navigation.navigate('RestaurantSignup') }}
+                    >
+                      <Text style={styles.signupButtonText}>Restaurant</Text>
+                    </TouchableOpacity>
+                  </>
+                )}
               </View>
             </View>
           </SafeAreaView>

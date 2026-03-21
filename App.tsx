@@ -9,6 +9,8 @@ import SignupScreen from './frontend/signup';
 import LoginScreen from './frontend/login';
 import UserDashboard from './frontend/user-dashboard';
 import UserProfileEdit from './frontend/user-profile-edit';
+import RestaurantSignup from './frontend/restaurant-signup';
+import RestaurantLogin from './frontend/restaurant-login';
 const Stack = createNativeStackNavigator();
 
 const App = () => {
@@ -38,6 +40,16 @@ const App = () => {
         <Stack.Screen
           name="UserProfileEdit"
           component={UserProfileEdit}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="RestaurantSignup"
+          component={RestaurantSignup}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="RestaurantLogin"
+          component={RestaurantLogin}
           options={{ headerShown: false }}
         />
       </Stack.Navigator>
