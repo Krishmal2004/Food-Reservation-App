@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   StyleSheet,
   View,
@@ -13,7 +13,8 @@ import {
   TextInput,
   Modal,
   KeyboardAvoidingView,
-  TouchableWithoutFeedback
+  TouchableWithoutFeedback,
+  RefreshControl
 } from 'react-native';
 import { launchImageLibrary, ImageLibraryOptions } from 'react-native-image-picker';
 
@@ -23,36 +24,19 @@ const INITIAL_RESERVATIONS = [
   { id: '2', customerName: 'Bob Jones', date: 'Tomorrow, 8:00 PM', guests: 4, status: 'Pending', notes: 'Window seat if possible' },
 ];
 
-const INITIAL_FOOD_PACKAGES = [
-  { 
-    id: '1', 
-    title: 'Couples Dinner', 
-    price: '$49.99', 
-    note: 'Includes 2 mains, 2 sides, and a dessert.',
-    image: 'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?q=80&w=1974' 
-  },
-  { 
-    id: '2', 
-    title: 'Family Feast', 
-    price: '$89.99', 
-    note: 'Enough for 4 people. Includes drinks.',
-    image: 'https://images.unsplash.com/photo-1544025162-d76694265947?q=80&w=2069' 
-  },
-];
-
 const CUSTOMER_FEEDBACKS = [
   { id: '1', customer: 'Alice Smith', text: 'Amazing food and great atmosphere!', rating: 5, date: 'Oct 24, 2024' },
   { id: '2', customer: 'Charlie Brown', text: 'Delivery was a bit late, but good.', rating: 4, date: 'Oct 15, 2024' },
 ];
 
-// ADDED "route" TO PROPS TO GET LOGIN DATA
 const RestaurantDashboard = ({ route, navigation }: { route: any, navigation: any }) => {
   
   // 1. Get restaurant ID and Details passed from Login screen
   const loggedInRestaurantId = route?.params?.resturantId || '';
   
-  const [packages, setPackages] = useState(INITIAL_FOOD_PACKAGES);
+  const [packages, setPackages] = useState<any[]>([]);
   const [reservations, setReservations] = useState(INITIAL_RESERVATIONS);
+  const [refreshing, setRefreshing] = useState(false);
   
   // 2. Map Profile State from Login params
   const [profile, setProfile] = useState({
@@ -74,10 +58,49 @@ const RestaurantDashboard = ({ route, navigation }: { route: any, navigation: an
   const [resModalVisible, setResModalVisible] = useState(false);
   const [selectedRes, setSelectedRes] = useState<any>(null);
 
-  // Profile functions
+  // ==========================================
+  // SAFE FETCH PACKAGES FROM DATABASE
+  // ==========================================
+  const fetchPackages = async () => {
+    if (!loggedInRestaurantId) {
+      console.log("⚠️ No Restaurant ID found. Please log out and log back in.");
+      return;
+    }
+
+    try {
+      console.log(`🔄 Fetching packages for ID: ${loggedInRestaurantId}...`);
+      const response = await fetch(`http://10.0.2.2:5000/api/resturant/get-food-packages/${loggedInRestaurantId}`);
+      
+      const rawText = await response.text(); 
+      
+      try {
+        const data = JSON.parse(rawText);
+        if (response.ok && data.packages) {
+          setPackages(data.packages);
+        }
+      } catch (jsonError) {
+        console.error("❌ Backend did not send JSON! Raw response was:", rawText);
+      }
+
+    } catch (error) {
+      console.error('❌ Error fetching packages:', error);
+    }
+  };
+
+  useEffect(() => {
+    fetchPackages();
+  }, [loggedInRestaurantId]);
+
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await fetchPackages();
+    setRefreshing(false);
+  }, [loggedInRestaurantId]);
+  // ==========================================
+
   const handleLogout = () => {
     setProfileMenuVisible(false);
-    navigation.navigate('RestaurantLogin'); // Adjust to your login route name
+    navigation.navigate('RestaurantLogin');
     Alert.alert("Logged Out", "You have been logged out successfully.");
   };
 
@@ -87,7 +110,6 @@ const RestaurantDashboard = ({ route, navigation }: { route: any, navigation: an
     Alert.alert("Success", "Profile updated successfully.");
   };
 
-  // Package functions
   const handleDeletePackage = (id: string) => {
     Alert.alert("Delete Package", "Are you sure you want to delete this food package?", [
       { text: "Cancel", style: "cancel" },
@@ -107,33 +129,32 @@ const RestaurantDashboard = ({ route, navigation }: { route: any, navigation: an
     setPkgModalVisible(true);
   };
 
-  // 3. NEW FUNCTION TO PICK IMAGE FROM PHONE
+  // 3. FUNCTION TO PICK IMAGE FROM PHONE
   const handleUploadPhoto = () => {
     const options: ImageLibraryOptions = {
       mediaType: 'photo',
       includeBase64: true,
-      quality: 0.2,
+      quality: 0.5,
+      maxWidth: 800, // Compress dimensions to prevent huge payload sizes
+      maxHeight: 800,
     }
 
     launchImageLibrary(options, (response) => {
-      if (response.didCancel) {
-        // User cancelled image picker
-        return;
-      } else if (response.errorCode) {
+      if (response.didCancel) return;
+      if (response.errorCode) {
         Alert.alert('Error', 'ImagePicker Error: ' + response.errorMessage);
         return;
       }
 
       if (response.assets && response.assets.length > 0) {
         const asset = response.assets[0];
-        // Create the base64 string
         const base64Image = `data:${asset.type || 'image/jpeg'};base64,${asset.base64}`;
         setPkgState(prev => ({ ...prev, image: base64Image }));
       }
     });
   };
 
-  // 4. UPDATED SAVE PACKAGE LOGIC
+  // 4. SAVE PACKAGE TO DATABASE (HANDLES CREATE & EDIT)
   const handleSavePackage = async () => {
     if (!pkgState.title || !pkgState.price) {
       Alert.alert("Error", "Please fill out title and price.");
@@ -149,13 +170,21 @@ const RestaurantDashboard = ({ route, navigation }: { route: any, navigation: an
     const finalImage = pkgState.image || 'https://images.unsplash.com/photo-1540189549336-e6e99c3679fe?auto=format&fit=crop&q=80&w=1000';
     
     try {
-      const response = await fetch('http://10.0.2.2:5000/api/resturant/create-food-package',{
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+      // Logic to switch between Creating and Editing
+      const isEditing = !!editingPackage;
+      
+      // FIXED THE URL LOGIC HERE:
+      const url = isEditing 
+        ? `http://10.0.2.2:5000/api/resturant/update-food-package/${editingPackage.id}`
+        : `http://10.0.2.2:5000/api/resturant/create-food-package`; 
+        
+      const method = isEditing ? 'PUT' : 'POST';
+
+      const response = await fetch(url, {
+        method: method,
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          resturantId: loggedInRestaurantId, // Send ID here
+          resturantId: loggedInRestaurantId,
           title: pkgState.title,
           price: pkgState.price,
           note: finalNote,
@@ -163,41 +192,41 @@ const RestaurantDashboard = ({ route, navigation }: { route: any, navigation: an
         }),
       });
       
-      const data = await response.json();
+      const textResponse = await response.text();
       
-      // FIXED RESPONSE.OK LOGIC
-      if(response.ok) {
-        if(editingPackage) {
-          // If editing an existing package
-          setPackages(packages.map(p => 
-            p.id === editingPackage.id 
-              ? { ...p, ...pkgState, image: finalImage } 
-              : p
-          ));
+      // Handle HTML error pages gracefully
+      if (textResponse.startsWith('<!DOCTYPE html>')) {
+        if (response.status === 413) {
+          Alert.alert("Error 413", "The image file is too large! Make sure your server.js limit is increased.");
+        } else if (response.status === 404) {
+          Alert.alert("Error 404", "Route not found. Make sure your backend is running.");
         } else {
-          // Add newly created package to UI
-          setPackages([...packages, data.foodPackage || { id: Math.random().toString(), ...pkgState, image: finalImage }]);
+          Alert.alert(`Server Error (${response.status})`, "The server crashed. Check your backend console.");
         }
-        setPkgModalVisible(false);
-        Alert.alert("Success", editingPackage ? "Food package updated successfully!" : "Food package created successfully!");
-      } else {
-        Alert.alert("Error", data.message || "Failed to save package. Please try again.");
+        console.error("HTML ERROR RESPONSE:", textResponse);
+        return;
+      }
+      
+      try {
+        const data = JSON.parse(textResponse);
+        if(response.ok) {
+          await fetchPackages(); // Refresh packages from server
+          setPkgModalVisible(false);
+          Alert.alert("Success", isEditing ? "Food package updated!" : "Food package created!");
+        } else {
+          Alert.alert("Error", data.message || "Failed to save package.");
+        }
+      } catch (e) {
+        console.error("Save error, raw response:", textResponse);
+        Alert.alert("Error", "Server returned an invalid response.");
       }
     } catch (error) {
       console.error('Package save error:', error);
-      Alert.alert("Network Error", "Could not connect to the server. Changes will be local only.");
-      
-      // Fallback for local changes if server is down
-      if (editingPackage) {
-        setPackages(packages.map(p => p.id === editingPackage.id ? { ...p, ...pkgState, image: finalImage } : p));
-      } else {
-        setPackages([...packages, { id: Math.random().toString(), ...pkgState, image: finalImage }]);
-      }
+      Alert.alert("Network Error", "Could not connect to the server.");
       setPkgModalVisible(false);
     };
   };
 
-  // Reservation functions
   const handleOpenResModal = (res: any) => {
     setSelectedRes(res);
     setResModalVisible(true);
@@ -209,7 +238,6 @@ const RestaurantDashboard = ({ route, navigation }: { route: any, navigation: an
     Alert.alert("Status Updated", `Reservation marked as ${newStatus}.`);
   };
 
-  // Renderers
   const renderReservation = (res: any) => (
     <TouchableOpacity key={res.id} style={styles.card} onPress={() => handleOpenResModal(res)}>
       <View style={styles.cardHeader}>
@@ -224,7 +252,7 @@ const RestaurantDashboard = ({ route, navigation }: { route: any, navigation: an
   );
 
   const renderFoodPackage = (pkg: any) => (
-    <View key={pkg.id} style={styles.packageCard}>
+    <View key={pkg.id || Math.random().toString()} style={styles.packageCard}>
       <Image source={{ uri: pkg.image }} style={styles.packageImage} />
       <View style={styles.packageInfo}>
         <Text style={styles.packageTitle}>{pkg.title}</Text>
@@ -245,8 +273,6 @@ const RestaurantDashboard = ({ route, navigation }: { route: any, navigation: an
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#F9F9F9" />
-      
-      {/* Header */}
       <View style={styles.header}>
         <View>
           <Text style={styles.greeting}>Hello, {profile.name} 👋</Text>
@@ -264,7 +290,6 @@ const RestaurantDashboard = ({ route, navigation }: { route: any, navigation: an
             />
           </TouchableOpacity>
           
-          {/* Simple Profile Dropdown */}
           {profileMenuVisible && (
             <View style={styles.dropdownMenu}>
               <TouchableOpacity style={styles.dropdownItem} onPress={() => { setProfileMenuVisible(false); setTempProfile(profile); setProfileModalVisible(true); }}>
@@ -279,15 +304,18 @@ const RestaurantDashboard = ({ route, navigation }: { route: any, navigation: an
         </View>
       </View>
 
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
-        
-        {/* Reservations Section */}
+      <ScrollView 
+        showsVerticalScrollIndicator={false} 
+        contentContainerStyle={styles.scrollContent}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={['#FF5A5F']} />
+        }
+      >
         <View style={styles.sectionContainer}>
           <Text style={styles.sectionTitle}>Customer Reservations</Text>
           {reservations.map(renderReservation)}
         </View>
 
-        {/* Food Packages Section */}
         <View style={styles.sectionContainer}>
           <View style={styles.sectionHeaderRow}>
             <Text style={styles.sectionTitle}>Food Packages</Text>
@@ -296,11 +324,14 @@ const RestaurantDashboard = ({ route, navigation }: { route: any, navigation: an
             </TouchableOpacity>
           </View>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.horizontalScroll}>
-            {packages.map(renderFoodPackage)}
+            {packages.length === 0 ? (
+              <Text style={{ color: '#666', fontStyle: 'italic', marginVertical: 10 }}>No food packages found. Pull down to refresh or Add one!</Text>
+            ) : (
+              packages.map(renderFoodPackage)
+            )}
           </ScrollView>
         </View>
 
-        {/* Feedbacks Section */}
         <View style={styles.sectionContainer}>
           <Text style={styles.sectionTitle}>Customer Feedbacks</Text>
           {CUSTOMER_FEEDBACKS.map(fb => (
@@ -314,27 +345,20 @@ const RestaurantDashboard = ({ route, navigation }: { route: any, navigation: an
             </View>
           ))}
         </View>
-
       </ScrollView>
 
-      {/* ---------------- MODALS ---------------- */}
-
-      {/* Edit Profile Modal */}
+      {/* Profile Modal */}
       <Modal visible={profileModalVisible} animationType="slide" transparent={true}>
         <View style={styles.modalOverlay}>
           <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
             <View style={styles.modalContent}>
               <Text style={styles.modalTitle}>Edit Profile</Text>
-              
               <Text style={styles.inputLabel}>Restaurant Name</Text>
               <TextInput style={styles.input} value={tempProfile.name} onChangeText={t => setTempProfile({...tempProfile, name: t})} />
-              
               <Text style={styles.inputLabel}>Email Address</Text>
               <TextInput style={styles.input} value={tempProfile.email} onChangeText={t => setTempProfile({...tempProfile, email: t})} keyboardType="email-address" autoCapitalize="none" />
-              
               <Text style={styles.inputLabel}>Password</Text>
               <TextInput style={styles.input} value={tempProfile.password} onChangeText={t => setTempProfile({...tempProfile, password: t})} secureTextEntry />
-
               <View style={styles.modalActions}>
                 <TouchableOpacity style={[styles.modalBtn, styles.cancelBtn]} onPress={() => setProfileModalVisible(false)}>
                   <Text style={styles.cancelBtnText}>Cancel</Text>
@@ -348,33 +372,27 @@ const RestaurantDashboard = ({ route, navigation }: { route: any, navigation: an
         </View>
       </Modal>
 
-      {/* Add/Edit Package Modal */}
+      {/* Package Modal */}
       <Modal visible={pkgModalVisible} animationType="slide" transparent={true}>
         <View style={styles.modalOverlay}>
           <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
             <View style={styles.modalContent}>
               <Text style={styles.modalTitle}>{editingPackage ? 'Edit Package' : 'Add New Package'}</Text>
-              
               <ScrollView showsVerticalScrollIndicator={false} style={{maxHeight: 400}}>
                 <Text style={styles.inputLabel}>Package Name</Text>
                 <TextInput style={styles.input} placeholder="e.g. VIP Dinner" value={pkgState.title} onChangeText={t => setPkgState({...pkgState, title: t})} />
-                
                 <Text style={styles.inputLabel}>Price</Text>
                 <TextInput style={styles.input} placeholder="e.g. $49.99" value={pkgState.price} onChangeText={t => setPkgState({...pkgState, price: t})} />
-                
                 <Text style={styles.inputLabel}>Additional Note / Description</Text>
                 <TextInput style={[styles.input, {height: 80, textAlignVertical: 'top'}]} placeholder="What's included?" multiline numberOfLines={3} value={pkgState.note} onChangeText={t => setPkgState({...pkgState, note: t})} />
-                
                 <Text style={styles.inputLabel}>Package Photo</Text>
                 {pkgState.image ? (
                   <Image source={{ uri: pkgState.image }} style={styles.previewImage} />
                 ) : null}
-                {/* 5. UPDATED BUTTON TO TRIGGER UPLOAD FROM PHONE */}
                 <TouchableOpacity style={styles.uploadBtn} onPress={handleUploadPhoto}>
                   <Text style={styles.uploadBtnText}>{pkgState.image ? 'Change Photo from Gallery' : 'Upload Photo from Gallery'}</Text>
                 </TouchableOpacity>
               </ScrollView>
-
               <View style={styles.modalActions}>
                 <TouchableOpacity style={[styles.modalBtn, styles.cancelBtn]} onPress={() => setPkgModalVisible(false)}>
                   <Text style={styles.cancelBtnText}>Cancel</Text>
@@ -417,7 +435,6 @@ const RestaurantDashboard = ({ route, navigation }: { route: any, navigation: an
                       <Text style={styles.resDetailLabel}>Current Status:</Text>
                       <Text style={[styles.resDetailValue, {fontWeight: '700'}]}>{selectedRes.status}</Text>
                     </View>
-
                     <Text style={[styles.inputLabel, {marginTop: 20}]}>Update Status</Text>
                     <View style={styles.statusActionRow}>
                       <TouchableOpacity style={[styles.statusUpdateBtn, {backgroundColor: '#E8F5E9', borderColor: '#4CAF50'}]} onPress={() => handleUpdateResStatus('Confirmed')}>
@@ -430,7 +447,6 @@ const RestaurantDashboard = ({ route, navigation }: { route: any, navigation: an
                         <Text style={[styles.statusUpdateText, {color: '#C62828'}]}>Cancel</Text>
                       </TouchableOpacity>
                     </View>
-
                     <TouchableOpacity style={[styles.modalBtn, styles.cancelBtn, {marginTop: 20}]} onPress={() => setResModalVisible(false)}>
                       <Text style={styles.cancelBtnText}>Close</Text>
                     </TouchableOpacity>

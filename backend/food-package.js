@@ -46,6 +46,7 @@ router.post('/create-food-package', async(req,res)=>{
         res.status(201).json({
             message: 'Food package created successfully',
             foodPackage: {
+                id: newFoodPackage._id,
                 resturantId: newFoodPackage.resturantId,
                 title: newFoodPackage.title,
                 price: newFoodPackage.price,
@@ -55,6 +56,59 @@ router.post('/create-food-package', async(req,res)=>{
         });
     } catch (error) {
         console.error('Error creating food package:', error);
+        res.status(500).json({message: 'Server error'});
+    }
+});
+//fetching food packages
+router.get('/get-food-packages/:resturantId', async(req, res) => {
+    try {
+        const { resturantId } = req.params;
+        const packages = await foodPackage.find({ resturantId });
+        
+        const formattedPackages = packages.map(pkg => ({
+            id: pkg._id.toString(),
+            resturantId: pkg.resturantId,
+            title: pkg.title,
+            price: pkg.price,
+            note: pkg.note,
+            image: pkg.image
+        }));
+
+        res.status(200).json({ packages: formattedPackages });
+    } catch (error) {
+        console.error('Error fetching food packages:', error);
+        res.status(500).json({ message: 'Server error' });
+    }
+})
+//update food package
+router.put('/update-food-package/:id', async(req,res)=>{
+    try {
+        const {id} = req.params;
+        const {title,price,note,image} = req.body;
+        if(!title || !price || !note) {
+            return res.status(400).json({message: 'All fields are required'});
+        }
+        const updatedPackage = await foodPackage.findByIdAndUpdate(
+            id, 
+            {title,price,note,image},
+            {new:true}
+        );
+        if(!updatedPackage) {
+            return res.status(404).json({message: 'Food package not found'});
+        }
+        res.status(200).json({
+            message: 'Food package updated successfully',
+            foodPackage: {
+                id: updatedPackage._id,
+                resturantId: updatedPackage.resturantId,
+                title: updatedPackage.title,
+                price: updatedPackage.price,
+                note: updatedPackage.note,
+                image: updatedPackage.image,
+            }
+        });
+    } catch (error) {
+        console.error('Error updating food package:', error);
         res.status(500).json({message: 'Server error'});
     }
 });
