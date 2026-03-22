@@ -76,6 +76,17 @@ router.get('/show-reviews/:email', async (req, res) => {
         res.status(500).json({ message: 'Server error' });
     }
 });
+// Get Reviews for restaurant
+router.get('/restaurant-reviews/:restaurantId', async (req, res) => {
+    try {
+        const { restaurantId } = req.params;
+        const reviews = await Review.find({ restaurantId }).populate('userId', 'fullName').sort({ createdAt: -1 });
+        res.status(200).json({ reviews });
+    } catch (error) {
+        console.error('Error fetching restaurant reviews:', error);
+        res.status(500).json({ message: 'Server error' });
+    }
+});
 //update review 
 router.put('/update-review/:id', async(req,res) => {
     try {

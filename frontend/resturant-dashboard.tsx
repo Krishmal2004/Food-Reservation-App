@@ -168,7 +168,7 @@ const RestaurantDashboard = ({ route, navigation }: { route: any, navigation: an
         />
 
         {/* COMPONENT 3: FEEDBACKS */}
-        <CustomerFeedbacks />
+        <CustomerFeedbacks loggedInRestaurantId={loggedInRestaurantId}/>
 
       </ScrollView>
 
