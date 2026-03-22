@@ -88,7 +88,7 @@ const UserDashboard = ({ navigation, route }: { navigation: any; route: any }) =
       >
         <BookTableBanner userEmail={loggedInEmail} />
         <FoodPackagesList />
-        <UserFeedbacks />
+        <UserFeedbacks userEmail={loggedInEmail}/>
       </ScrollView>
     </SafeAreaView>
   );

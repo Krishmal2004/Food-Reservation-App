@@ -61,5 +61,19 @@ router.post('/add-review', async (req,res) =>{
         res.status(500).json({message: 'Server error'});
     }
 });
-
+// Get Reviews
+router.get('/show-reviews/:email', async (req, res) => {
+    try {
+        const User = mongoose.model('User');
+        const user = await User.findOne({ email: req.params.email });
+        if(!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+        const reviews = await Review.find({ userId: user._id }).populate('restaurantId', 'restaurantName');
+        res.status(200).json({reviews});
+    } catch (error) {
+        console.error('Error fetching reviews:', error);
+        res.status(500).json({ message: 'Server error' });
+    }
+});
 module.exports = router;
