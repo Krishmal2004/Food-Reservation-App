@@ -2,11 +2,11 @@ import React from 'react';
 import { StyleSheet, View, Text, TouchableOpacity, ImageBackground } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 
-const BookTableBanner = () => {
+const BookTableBanner = ({userEmail}: {userEmail?:string}) => {
   const navigation = useNavigation<any>();
 
   return (
-    <TouchableOpacity style={styles.bookingBanner} activeOpacity={0.8} onPress={() => navigation.navigate('BookNow')}>
+    <TouchableOpacity style={styles.bookingBanner} activeOpacity={0.8} onPress={() => navigation.navigate('BookNow',{currentEmail: userEmail})}>
       <ImageBackground 
         source={{ uri: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?q=80&w=2070' }}
         style={styles.bookingBannerImage}

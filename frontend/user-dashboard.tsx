@@ -86,7 +86,7 @@ const UserDashboard = ({ navigation, route }: { navigation: any; route: any }) =
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
       >
-        <BookTableBanner />
+        <BookTableBanner userEmail={loggedInEmail} />
         <FoodPackagesList />
         <UserFeedbacks />
       </ScrollView>

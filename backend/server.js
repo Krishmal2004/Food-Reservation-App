@@ -7,6 +7,7 @@ const bcrypt = require('bcrypt');
 const userLoginRouter = require('./user-login');
 const resturantLoginRouter = require('./resturant-login');
 const foodPackageRouter = require('./food-package');
+const reviewRouter = require('./review');
 
 const app = express();
 
@@ -22,6 +23,7 @@ mongoose.connect(process.env.MONGO_URI)
 app.use('/api/auth', userLoginRouter);
 app.use('/api/auth', resturantLoginRouter);
 app.use('/api/resturant', foodPackageRouter);
+app.use('/api/user', reviewRouter);
 //Add the payload limits for handling large images
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
