@@ -14,10 +14,31 @@ const FoodPackages: React.FC<FoodPackagesProps> = ({ loggedInRestaurantId, packa
   const [editingPackage, setEditingPackage] = useState<any>(null);
   const [pkgState, setPkgState] = useState({ title: '', price: '', note: '', image: '' });
 
-  const handleDeletePackage = (id: string) => {
+    const handleDeletePackage = (id: string) => {
     Alert.alert("Delete Package", "Are you sure you want to delete this food package?", [
       { text: "Cancel", style: "cancel" },
-      { text: "Delete", style: "destructive", onPress: () => setPackages(packages.filter(pkg => pkg.id !== id)) }
+      { 
+        text: "Delete", 
+        style: "destructive", 
+        onPress: async () => {
+          try {
+            const response = await fetch(`http://10.0.2.2:5000/api/resturant/delete-food-package/${id}`, {
+              method: 'DELETE',
+            });
+
+            if (response.ok) {
+              setPackages(packages.filter(pkg => pkg.id !== id));
+              Alert.alert("Deleted", "Food package has been successfully deleted.");
+            } else {
+              const data = await response.json();
+              Alert.alert("Error", data.message || "Failed to delete package.");
+            }
+          } catch (error) {
+            console.error('Error deleting package:', error);
+            Alert.alert("Network Error", "Could not connect to the server.");
+          }
+        } 
+      }
     ]);
   };
 

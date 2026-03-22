@@ -112,4 +112,18 @@ router.put('/update-food-package/:id', async(req,res)=>{
         res.status(500).json({message: 'Server error'});
     }
 });
+//delete food package
+router.delete('/delete-food-package/:id', async(req,res)=>{
+    try {
+        const {id} = req.params;
+        const deletedPackage = await foodPackage.findByIdAndDelete(id);
+        if(!deletedPackage) {
+            return res.status(404).json({message: 'Food package not found'});
+        }
+        res.status(200).json({message: 'Food package deleted successfully'});
+    } catch (error) {
+        console.error('Error deleting food package:', error);
+        res.status(500).json({message: 'Server error'});
+    }
+});
 module.exports = router;

@@ -8,7 +8,8 @@ import {
   TextInput, 
   KeyboardAvoidingView, 
   Platform,
-  ActivityIndicator
+  ActivityIndicator,
+  Alert
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 
@@ -78,22 +79,59 @@ const UserFeedbacks = ({ userEmail }: { userEmail?: string }) => {
 
   // Note: For actual delete/edit, you will need new backend routes (PUT/DELETE) later.
   // For now, this just updates the local state so the UI works.
-  const confirmDelete = () => {
-    if (selectedFeedback) {
-      setFeedbacks(feedbacks.filter(fb => fb.id !== selectedFeedback.id));
+  const confirmDelete = async() => {
+    if(!selectedFeedback) return;
+    try {
+      const response = await fetch(`http://10.0.2.2:5000/api/user/delete-review/${selectedFeedback.id}`,{
+        method: 'DELETE',
+      });
+      if(response.ok) {
+        setFeedbacks(feedbacks.filter(fb => fb.id !== selectedFeedback.id));
+        Alert.alert("Deleted", "Your feedback has been deleted.");
+        closeModal();
+      } else {
+        const data = await response.json();
+        Alert.alert("Error", data.message || "Failed to delete feedback. Please try again.");
+      }
+    } catch (error) {
+      console.error('Error deleting feedback:', error);
+      Alert.alert("Error", "An error occurred while deleting your feedback. Please try again.");
     }
-    closeModal();
   };
 
-  const saveEdit = () => {
-    if (selectedFeedback) {
-      setFeedbacks(feedbacks.map(fb => 
-        fb.id === selectedFeedback.id 
-          ? { ...fb, text: editText, rating: editRating } 
+  const saveEdit = async() => {
+    if(!selectedFeedback) return;
+    try{
+      const response = await fetch(`http://10.0.2.2:5000/api/user/update-review/${selectedFeedback.id}`,{
+        method: 'PUT',
+        headers: {
+          'Content-type': 'application/json'
+        },
+        body: JSON.stringify({
+          rating: editRating,
+          text: editText,
+        }),
+      });
+      const data = await response.json();
+      if(response.ok){
+        setFeedbacks(feedbacks.map(fb=>
+          fb.id === selectedFeedback.id
+          ? {
+            ...fb,
+            text: editText,
+            rating: editRating
+          }
           : fb
-      ));
+        ));
+        Alert.alert("Success", "Your feedback has been updated.");
+        closeModal();
+      } else {
+        Alert.alert("Error", data.message || "Failed to update feedback. Please try again.");
+      }
+    } catch(error) {
+      console.error('Error updating feedback:', error);
+      Alert.alert("Error", "An error occurred while updating your feedback. Please try again.");
     }
-    closeModal();
   };
 
   return (

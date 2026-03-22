@@ -76,4 +76,49 @@ router.get('/show-reviews/:email', async (req, res) => {
         res.status(500).json({ message: 'Server error' });
     }
 });
+//update review 
+router.put('/update-review/:id', async(req,res) => {
+    try {
+        const {id} = req.params;
+        const {rating,text} = req.body;
+        if(!rating || !text) {
+            return res.status(400).json({message: 'All fields are required'});
+        }
+        const updatedReview = await Review.findByIdAndUpdate(
+            id,
+            {rating,text},
+            {new:true}
+        );
+        if(!updatedReview) {
+            return res.status(404).json({message: 'Review not found'});
+        }
+        res.status(200).json({
+            message: 'Review updated successfully',
+            review: {
+                id: updatedReview._id,
+                userId: updatedReview.userId,
+                restaurantId: updatedReview.restaurantId,
+                rating: updatedReview.rating,
+                text: updatedReview.text,
+            }
+        });
+    } catch (error) {
+        console.error('Error updating review:', error);
+        res.status(500).json({message: 'Server error'});
+    }
+});
+// Delete review 
+router.delete('/delete-review/:id', async(req,res) =>{
+    try {
+        const {id} = req.params;
+        const deletedReview = await Review.findByIdAndDelete(id);
+        if(!deletedReview) {
+            return res.status(404).json({message: 'Review not found'});
+        }
+        res.status(200).json({message: 'Review deleted successfully'});
+    } catch (error) {
+        console.error('Error deleting review:', error);
+        res.status(500).json({message: 'Server error'});
+    }
+})
 module.exports = router;
