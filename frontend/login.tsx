@@ -38,7 +38,7 @@ const LoginScreen = ({ navigation }: { navigation: any }) => {
       const data = await response.json();
       if(response.ok) {
         Alert.alert('Success', 'Logged in successfully!');
-        navigation.navigate('UserDashboard');
+        navigation.navigate('UserDashboard',{currentEmail: email});
       } else {
         Alert.alert('Login Failed', data.message || 'Invalid email or password');
       }

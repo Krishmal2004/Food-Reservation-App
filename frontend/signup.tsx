@@ -51,7 +51,7 @@ const SignupScreen = ({ navigation }: { navigation: any }) => {
 
       if (response.ok) {
         Alert.alert('Success', 'Account created successfully!');
-        navigation.navigate('UserDashboard');
+        navigation.navigate('UserDashboard', {currentEmail: email}); 
       } else {
         Alert.alert('Signup Failed', data.message || 'Something went wrong');
       }

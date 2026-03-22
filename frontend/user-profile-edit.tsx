@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   StyleSheet,
   View,
@@ -12,19 +12,90 @@ import {
   ScrollView,
   Image,
   Alert,
+  ActivityIndicator,
 } from 'react-native';
 
-const UserProfileEdit = ({ navigation }: { navigation: any }) => {
-  const [fullName, setFullName] = useState('John Doe');
-  const [mobileNumber, setMobileNumber] = useState('+1 234 567 8900');
-  const [email, setEmail] = useState('john.doe@example.com');
-  const [password, setPassword] = useState('********');
+const UserProfileEdit = ({ navigation, route }: { navigation: any, route: any }) => {
+  // Replace this with the actual logged-in user's email passed from the previous screen
+  const currentEmail = route.params?.currentEmail || 'your_actual_test_email@gmail.com'; 
 
-  const handleSave = () => {
-    Alert.alert('Success', 'Profile updated successfully!', [
-      { text: 'OK', onPress: () => navigation.goBack() }
-    ]);
+  // Start with empty strings instead of 'John Doe'
+  const [fullName, setFullName] = useState('');
+  const [mobileNumber, setMobileNumber] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState(''); 
+  
+  const [isLoading, setIsLoading] = useState(false);
+  const [isFetching, setIsFetching] = useState(true); 
+  // --- NEW: FETCH USER DATA WHEN SCREEN LOADS ---
+  useEffect(() => {
+    const fetchUserData = async () => {
+      try {
+        const response = await fetch(`http://10.0.2.2:5000/api/auth/profile/${currentEmail}`);
+        const rawText = await response.text();
+        try {
+          const data = JSON.parse(rawText);
+          if(response.ok && data.user) {
+            setFullName(data.user.fullName);
+            setMobileNumber(data.user.mobileNumber);
+            setEmail(data.user.email);
+          }
+        } catch (jsonError) {
+          console.error("❌ Backend did not send JSON! Raw response was:", rawText);
+        }
+      } catch (error) {
+        console.error('Error fetching profile:', error);
+      } finally {
+        setIsFetching(false);
+      }
+    };
+
+    fetchUserData();
+  }, [currentEmail]);
+  const handleSave = async () => {
+    if (!fullName || !mobileNumber || !email) {
+      Alert.alert('Validation Error', 'Name, mobile, and email cannot be empty.');
+      return;
+    }
+    setIsLoading(true);
+    try {
+      const response = await fetch(`http://10.0.2.2:5000/api/auth/update-profile/${currentEmail}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          currentEmail: currentEmail, 
+          fullName,
+          mobileNumber,
+          email,
+          password,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        Alert.alert('Success', 'Profile updated successfully!', [
+          { text: 'OK', onPress: () => navigation.goBack() }
+        ]);
+      } else {
+        Alert.alert('Update Failed', data.message || 'Something went wrong');
+      }
+    } catch (error) {
+      console.error('Update error:', error);
+      Alert.alert('Network Error', 'Could not connect to the server.');
+    } finally {
+      setIsLoading(false);
+    }
   };
+
+  // Show a loading spinner while fetching the data from the database
+  if (isFetching) {
+    return (
+      <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
+        <ActivityIndicator size="large" color="#FF5A5F" />
+      </View>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container}>
@@ -32,17 +103,31 @@ const UserProfileEdit = ({ navigation }: { navigation: any }) => {
 
       {/* Custom Header */}
       <View style={styles.header}>
-        {/* FIXED: Large, reliable tap target + hitSlop */}
         <TouchableOpacity
           style={styles.headerIconButton}
           onPress={() => navigation.goBack()}
           activeOpacity={0.7}
           hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+          disabled={isLoading}
         >
           <Text style={styles.backButtonIcon}>❮</Text>
         </TouchableOpacity>
 
         <Text style={styles.headerTitle}>Edit Profile</Text>
+
+        <TouchableOpacity
+          style={styles.headerTextButton}
+          onPress={handleSave}
+          activeOpacity={0.7}
+          hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+          disabled={isLoading}
+        >
+          {isLoading ? (
+            <ActivityIndicator size="small" color="#FF5A5F" />
+          ) : (
+            <Text style={styles.saveText}>Save</Text>
+          )}
+        </TouchableOpacity>
       </View>
 
       <KeyboardAvoidingView
@@ -79,6 +164,7 @@ const UserProfileEdit = ({ navigation }: { navigation: any }) => {
                 onChangeText={setFullName}
                 placeholder="Enter your full name"
                 placeholderTextColor="#A0A0A0"
+                editable={!isLoading}
               />
             </View>
 
@@ -91,6 +177,7 @@ const UserProfileEdit = ({ navigation }: { navigation: any }) => {
                 placeholder="Enter your mobile number"
                 placeholderTextColor="#A0A0A0"
                 keyboardType="phone-pad"
+                editable={!isLoading}
               />
             </View>
 
@@ -104,28 +191,22 @@ const UserProfileEdit = ({ navigation }: { navigation: any }) => {
                 placeholderTextColor="#A0A0A0"
                 keyboardType="email-address"
                 autoCapitalize="none"
+                editable={!isLoading}
               />
             </View>
 
             <View style={styles.inputGroup}>
-              <Text style={styles.label}>Password</Text>
+              <Text style={styles.label}>New Password (Optional)</Text>
               <TextInput
                 style={styles.input}
                 value={password}
                 onChangeText={setPassword}
-                placeholder="Enter new password"
+                placeholder="Leave blank to keep current"
                 placeholderTextColor="#A0A0A0"
                 secureTextEntry
+                editable={!isLoading}
               />
             </View>
-
-            <TouchableOpacity
-              style={styles.saveButton}
-              activeOpacity={0.8}
-              onPress={handleSave}
-            >
-              <Text style={styles.saveButtonText}>Save Changes</Text>
-            </TouchableOpacity>
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -133,6 +214,7 @@ const UserProfileEdit = ({ navigation }: { navigation: any }) => {
   );
 };
 
+// ... KEEP YOUR EXISTING STYLES AT THE BOTTOM ...
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#FFFFFF' },
 
@@ -141,7 +223,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 12,
-    // FIX: ensure header isn't too close to Android status bar
     paddingTop: Platform.OS === 'android' ? (StatusBar.currentHeight || 0) : 0,
     height: Platform.OS === 'android' ? 56 + (StatusBar.currentHeight || 0) : 56,
     borderBottomWidth: 1,
@@ -149,7 +230,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
   },
 
-  // Left icon button (Back)
   headerIconButton: {
     minWidth: 44,
     minHeight: 44,
@@ -158,7 +238,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
   },
 
-  // Right text button (Save)
   headerTextButton: {
     minWidth: 44,
     minHeight: 44,
@@ -229,27 +308,6 @@ const styles = StyleSheet.create({
     color: '#1A1A1A',
     borderWidth: 1,
     borderColor: '#EFEFEF',
-  },
-
-  saveButton: {
-    backgroundColor: '#FF5A5F',
-    height: 60,
-    borderRadius: 30,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginTop: 20,
-    shadowColor: '#FF5A5F',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 6,
-  },
-
-  saveButtonText: {
-    color: '#FFFFFF',
-    fontSize: 18,
-    fontWeight: '700',
-    letterSpacing: 0.5,
   },
 });
 

@@ -16,7 +16,8 @@ import BookTableBanner from './user/BookTableBanner';
 import FoodPackagesList from './user/FoodPackagesList';
 import UserFeedbacks from './user/UserFeedbacks';
 
-const UserDashboard = ({ navigation }: { navigation: any }) => {
+const UserDashboard = ({ navigation,route }: { navigation: any; route: any }) => {
+  const loggedInEmail = route?.params?.currentEmail;
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#F9F9F9" />
@@ -30,7 +31,7 @@ const UserDashboard = ({ navigation }: { navigation: any }) => {
         <TouchableOpacity 
           style={styles.profileAvatar} 
           activeOpacity={0.7}
-          onPress={() => navigation.navigate('UserProfileEdit')}
+          onPress={() => navigation.navigate('UserProfileEdit',{currentEmail: loggedInEmail})}
         >
           <Image 
             source={{ uri: 'https://randomuser.me/api/portraits/men/32.jpg' }} 

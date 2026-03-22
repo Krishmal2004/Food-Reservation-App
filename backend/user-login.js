@@ -85,4 +85,60 @@ router.post('/login', async (req, res) => {
         res.status(500).json({message: 'Server error'});
     }
 });
+
+//Update User Profile
+router.put('/update-profile/:email',async (req,res) =>{
+    try {
+        //const {id} = req.params;
+        const currentEmail = req.params.email;
+        const {fullName,mobileNumber,email,password} = req.body;
+        if(!fullName || !mobileNumber || !email) {
+            return res.status(400).json({message: 'All fields are required'});
+        }
+        let updateData = {fullName, mobileNumber, email};
+        if(password && password.trim() !== '') {
+            const salt = await bcrypt.genSalt(10);
+            updateData.password = await bcrypt.hash(password, salt);
+        }
+        const updatedUser = await user.findOneAndUpdate(
+            { email: currentEmail },
+            updateData,
+            {returnDocument: 'after', runValidators: true}
+        );
+        if(!updatedUser) {
+            return res.status(404).json({message: 'User not found'});
+        }
+        res.status(200).json({
+            message: 'Profile updated successfully',
+            user: {
+                id: updatedUser._id,
+                fullName: updatedUser.fullName,
+                mobileNumber: updatedUser.mobileNumber,
+                email: updatedUser.email,
+            }
+        });
+    } catch (error) {
+        console.error('Error updating profile:', error);
+        res.status(500).json({message: 'Server error'});
+    }
+});
+//Get the Profile Details
+router.get('/profile/:email', async (req,res) =>{
+    try {
+        const existingUser = await user.findOne({email: req.params.email});
+        if(!existingUser) {
+            return res.status(404).json({message: 'User not found'});
+        }
+        res.status(200).json({
+            user: {
+                fullName: existingUser.fullName,
+                mobileNumber: existingUser.mobileNumber,
+                email: existingUser.email,
+            }
+        });
+    } catch (error) {
+        console.error('Error fetching profile:', error);
+        res.status(500).json({message: 'Server error'});
+    }
+});
 module.exports = router;
