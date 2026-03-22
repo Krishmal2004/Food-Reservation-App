@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { 
   StyleSheet, 
   View, 
@@ -8,11 +8,30 @@ import {
   Image,
   SafeAreaView,
   Platform,
-  StatusBar
+  StatusBar,
+  Modal,
+  KeyboardAvoidingView,
+  Alert,
+  TextInput
 } from 'react-native';
 
 const RestaurantDetails = ({ route, navigation }: any) => {
   const { restaurant } = route?.params || {};
+
+  const [feedbackModalVisible, setFeedbackModalVisible] = useState(false);
+  const [rating, setRating] = useState(5);
+  const [reviewText, setReviewText] = useState('');
+  
+  const currentDate = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+
+  const handleFeedbackSubmit = () => {
+    Alert.alert("Success", "Your feedback was submitted successfully!");
+    setFeedbackModalVisible(false);
+    setTimeout(() => {
+      setRating(5);
+      setReviewText('');
+    }, 300);
+  };
 
   if (!restaurant) {
     return (
@@ -53,6 +72,18 @@ const RestaurantDetails = ({ route, navigation }: any) => {
         <View style={styles.infoSection}>
            <Text style={styles.title}>{restaurant.name}</Text>
            <Text style={styles.subtitle}>{restaurant.cuisine}  •  ★ {restaurant.rating}</Text>
+           
+           <TouchableOpacity 
+             style={styles.feedbackListBtn} 
+             activeOpacity={0.7}
+             onPress={() => {
+               setRating(5);
+               setReviewText('');
+               setFeedbackModalVisible(true);
+             }}
+           >
+             <Text style={styles.feedbackListBtnText}>⭐ Leave Feedback</Text>
+           </TouchableOpacity>
         </View>
 
         {/* Reservations */}
@@ -92,6 +123,64 @@ const RestaurantDetails = ({ route, navigation }: any) => {
         </View>
 
       </ScrollView>
+
+      {/* Feedback Modal */}
+      <Modal
+        animationType="fade"
+        transparent={true}
+        visible={feedbackModalVisible}
+        onRequestClose={() => setFeedbackModalVisible(false)}
+      >
+        <KeyboardAvoidingView 
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          style={styles.modalOverlay}
+        >
+          <View style={styles.modalContainer}>
+            <Text style={styles.modalTitle}>Leave Feedback</Text>
+            <Text style={styles.modalSubtitle}>{restaurant.name}</Text>
+            <Text style={styles.modalDate}>On {currentDate}</Text>
+            
+            <View style={styles.inputGroup}>
+              <Text style={styles.inputLabel}>Rating</Text>
+              <View style={styles.starSelectionContainer}>
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <TouchableOpacity 
+                    key={star} 
+                    style={styles.starButton}
+                    onPress={() => setRating(star)}
+                    activeOpacity={0.7}
+                  >
+                    <Text style={[styles.starIcon, rating >= star ? styles.starIconActive : styles.starIconInactive]}>★</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </View>
+
+            <View style={styles.inputGroup}>
+              <Text style={styles.inputLabel}>Review (Optional)</Text>
+              <TextInput
+                style={[styles.input, styles.textArea]}
+                value={reviewText}
+                onChangeText={setReviewText}
+                placeholder="Tell us about your experience..."
+                placeholderTextColor="#A0A0A0"
+                multiline
+                numberOfLines={4}
+                textAlignVertical="top"
+              />
+            </View>
+
+            <View style={styles.modalButtonRow}>
+              <TouchableOpacity style={[styles.modalButtonRowBtn, styles.cancelButton]} onPress={() => setFeedbackModalVisible(false)}>
+                <Text style={styles.cancelButtonText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={[styles.modalButtonRowBtn, styles.saveButton]} onPress={handleFeedbackSubmit}>
+                <Text style={styles.saveButtonText}>Submit</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
     </SafeAreaView>
   );
 };
@@ -238,6 +327,122 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontWeight: '800',
     fontSize: 14,
+  },
+  feedbackListBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+    backgroundColor: '#FEF5E7',
+    borderRadius: 12,
+    marginTop: 16,
+  },
+  feedbackListBtnText: {
+    color: '#D68910',
+    fontSize: 15,
+    fontWeight: '700',
+  },
+  // Modal Styles
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.4)',
+    justifyContent: 'center',
+    padding: 20,
+  },
+  modalContainer: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 24,
+    padding: 24,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.2,
+    shadowRadius: 20,
+    elevation: 10,
+  },
+  modalTitle: {
+    fontSize: 22,
+    fontWeight: '800',
+    color: '#1A1A1A',
+    marginBottom: 4,
+  },
+  modalSubtitle: {
+    fontSize: 18,
+    color: '#2980B9',
+    fontWeight: '700',
+    marginBottom: 4,
+  },
+  modalDate: {
+    fontSize: 13,
+    color: '#888888',
+    marginBottom: 20,
+    fontWeight: '500',
+  },
+  inputGroup: {
+    marginBottom: 20,
+  },
+  inputLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#4A4A4A',
+    marginBottom: 8,
+  },
+  input: {
+    backgroundColor: '#F8F9F9',
+    borderWidth: 1,
+    borderColor: '#EAECEE',
+    borderRadius: 12,
+    padding: 14,
+    fontSize: 15,
+    color: '#1A1A1A',
+  },
+  textArea: {
+    height: 100,
+  },
+  starSelectionContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'flex-start',
+    gap: 12,
+  },
+  starButton: {
+    padding: 2,
+  },
+  starIcon: {
+    fontSize: 42,
+  },
+  starIconActive: {
+    color: '#F39C12',
+  },
+  starIconInactive: {
+    color: '#EAECEE',
+  },
+  modalButtonRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: 12,
+    marginTop: 10,
+  },
+  modalButtonRowBtn: {
+    flex: 1,
+    padding: 16,
+    borderRadius: 14,
+    alignItems: 'center',
+  },
+  cancelButton: {
+    backgroundColor: '#F2F4F4',
+  },
+  cancelButtonText: {
+    color: '#7F8C8D',
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  saveButton: {
+    backgroundColor: '#27AE60',
+  },
+  saveButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '700',
   },
 });
 

@@ -20,20 +20,20 @@ import CustomerReservations from './resturant/CustomerReservations';
 import FoodPackages from './resturant/FoodPackages';
 import CustomerFeedbacks from './resturant/CustomerFeedbacks';
 const RestaurantDashboard = ({ route, navigation }: { route: any, navigation: any }) => {
-  
+
   // 1. Get restaurant ID and Details passed from Login screen
   const loggedInRestaurantId = route?.params?.resturantId || '';
-  
+
   const [packages, setPackages] = useState<any[]>([]);
   const [refreshing, setRefreshing] = useState(false);
-  
+
   // 2. Map Profile State from Login params
   const [profile, setProfile] = useState({
     name: route?.params?.restaurantName || 'Italian Bistro',
     email: route?.params?.email || 'contact@italianbistro.com',
     password: ''
   });
-  
+
   const [profileMenuVisible, setProfileMenuVisible] = useState(false);
   const [profileModalVisible, setProfileModalVisible] = useState(false);
   const [tempProfile, setTempProfile] = useState({ ...profile });
@@ -43,7 +43,7 @@ const RestaurantDashboard = ({ route, navigation }: { route: any, navigation: an
 
     try {
       const response = await fetch(`http://10.0.2.2:5000/api/resturant/get-food-packages/${loggedInRestaurantId}`);
-      const rawText = await response.text(); 
+      const rawText = await response.text();
       try {
         const data = JSON.parse(rawText);
         if (response.ok && data.packages) {
@@ -75,13 +75,13 @@ const RestaurantDashboard = ({ route, navigation }: { route: any, navigation: an
   };
 
   const handleSaveProfile = async () => {
-    console.log("Frontend saving for is: ",loggedInRestaurantId);
-    if(!tempProfile.name || !tempProfile.email) {
+    console.log("Frontend saving for is: ", loggedInRestaurantId);
+    if (!tempProfile.name || !tempProfile.email) {
       Alert.alert("Validation Error", "Name and Email cannot be empty.");
       return;
     }
-    if(!loggedInRestaurantId) {
-      Alert.alert("Error","Resturant ID not found. Please log in again.");
+    if (!loggedInRestaurantId) {
+      Alert.alert("Error", "Resturant ID not found. Please log in again.");
       return;
     }
     try {
@@ -95,7 +95,7 @@ const RestaurantDashboard = ({ route, navigation }: { route: any, navigation: an
         })
       });
       const data = await response.json();
-      if(response.ok) {
+      if (response.ok) {
         setProfile({
           ...profile,
           name: data.resturant.restaurantName,
@@ -107,7 +107,7 @@ const RestaurantDashboard = ({ route, navigation }: { route: any, navigation: an
         Alert.alert("Error", data.message || "Failed to update profile. Please try again.");
       }
     } catch (error) {
-      console.error("Profile update error: ",error);
+      console.error("Profile update error: ", error);
       Alert.alert("Network Error", "Could not connect to server. Please check your internet connection and try again.");
     }
   };
@@ -115,7 +115,7 @@ const RestaurantDashboard = ({ route, navigation }: { route: any, navigation: an
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#F9F9F9" />
-      
+
       {/* HEADER */}
       <View style={styles.header}>
         <View>
@@ -123,17 +123,17 @@ const RestaurantDashboard = ({ route, navigation }: { route: any, navigation: an
           <Text style={styles.subtitle}>Manage your business efficiently</Text>
         </View>
         <View>
-          <TouchableOpacity 
-            style={styles.profileAvatar} 
+          <TouchableOpacity
+            style={styles.profileAvatar}
             activeOpacity={0.7}
             onPress={() => setProfileMenuVisible(!profileMenuVisible)}
           >
-            <Image 
-              source={{ uri: 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?q=80&w=1974' }} 
-              style={styles.avatarImage} 
+            <Image
+              source={{ uri: 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?q=80&w=1974' }}
+              style={styles.avatarImage}
             />
           </TouchableOpacity>
-          
+
           {profileMenuVisible && (
             <View style={styles.dropdownMenu}>
               <TouchableOpacity style={styles.dropdownItem} onPress={() => { setProfileMenuVisible(false); setTempProfile(profile); setProfileModalVisible(true); }}>
@@ -148,23 +148,23 @@ const RestaurantDashboard = ({ route, navigation }: { route: any, navigation: an
         </View>
       </View>
 
-      <ScrollView 
-        showsVerticalScrollIndicator={false} 
+      <ScrollView
+        showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={['#FF5A5F']} />
         }
       >
-        
+
         {/* COMPONENT 1: RESERVATIONS */}
         <CustomerReservations />
 
         {/* COMPONENT 2: FOOD PACKAGES */}
-        <FoodPackages 
-          loggedInRestaurantId={loggedInRestaurantId} 
-          packages={packages} 
-          setPackages={setPackages} 
-          fetchPackages={fetchPackages} 
+        <FoodPackages
+          loggedInRestaurantId={loggedInRestaurantId}
+          packages={packages}
+          setPackages={setPackages}
+          fetchPackages={fetchPackages}
         />
 
         {/* COMPONENT 3: FEEDBACKS */}
@@ -179,11 +179,11 @@ const RestaurantDashboard = ({ route, navigation }: { route: any, navigation: an
             <View style={styles.modalContent}>
               <Text style={styles.modalTitle}>Edit Profile</Text>
               <Text style={styles.inputLabel}>Restaurant Name</Text>
-              <TextInput style={styles.input} value={tempProfile.name} onChangeText={t => setTempProfile({...tempProfile, name: t})} />
+              <TextInput style={styles.input} value={tempProfile.name} onChangeText={t => setTempProfile({ ...tempProfile, name: t })} />
               <Text style={styles.inputLabel}>Email Address</Text>
-              <TextInput style={styles.input} value={tempProfile.email} onChangeText={t => setTempProfile({...tempProfile, email: t})} keyboardType="email-address" autoCapitalize="none" />
+              <TextInput style={styles.input} value={tempProfile.email} onChangeText={t => setTempProfile({ ...tempProfile, email: t })} keyboardType="email-address" autoCapitalize="none" />
               <Text style={styles.inputLabel}>Password</Text>
-              <TextInput style={styles.input} value={tempProfile.password} onChangeText={t => setTempProfile({...tempProfile, password: t})} secureTextEntry />
+              <TextInput style={styles.input} value={tempProfile.password} onChangeText={t => setTempProfile({ ...tempProfile, password: t })} secureTextEntry />
               <View style={styles.modalActions}>
                 <TouchableOpacity style={[styles.modalBtn, styles.cancelBtn]} onPress={() => setProfileModalVisible(false)}>
                   <Text style={styles.cancelBtnText}>Cancel</Text>
@@ -210,6 +210,19 @@ const styles = StyleSheet.create({
   },
   greeting: { fontSize: 22, fontWeight: '800', color: '#1A1A1A', marginBottom: 4 },
   subtitle: { fontSize: 13, color: '#666666' },
+  headerRight: { flexDirection: 'row', alignItems: 'center' },
+  logoutBtn: {
+    marginRight: 12,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    backgroundColor: '#FFEBEB',
+    borderRadius: 8,
+  },
+  logoutText: {
+    color: '#E74C3C',
+    fontWeight: '700',
+    fontSize: 13,
+  },
   profileAvatar: {
     width: 48, height: 48, borderRadius: 24, backgroundColor: '#E0E0E0',
     shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 4, elevation: 3

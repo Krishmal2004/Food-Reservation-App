@@ -9,6 +9,7 @@ import {
   ScrollView,
   Image,
   Platform,
+  Alert,
 } from 'react-native';
 
 // Import the split components (adjust the path if they are inside a folder like './components/')
@@ -18,6 +19,18 @@ import UserFeedbacks from './user/UserFeedbacks';
 
 const UserDashboard = ({ navigation,route }: { navigation: any; route: any }) => {
   const loggedInEmail = route?.params?.currentEmail;
+
+  const handleLogout = () => {
+    Alert.alert(
+      "Logout",
+      "Are you sure you want to logout?",
+      [
+        { text: "Cancel", style: "cancel" },
+        { text: "Logout", onPress: () => navigation.navigate('Login'), style: "destructive" }
+      ]
+    );
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#F9F9F9" />
@@ -28,16 +41,21 @@ const UserDashboard = ({ navigation,route }: { navigation: any; route: any }) =>
           <Text style={styles.greeting}>Hello, John! 👋</Text>
           <Text style={styles.subtitle}>Ready to satisfy your cravings?</Text>
         </View>
-        <TouchableOpacity 
-          style={styles.profileAvatar} 
-          activeOpacity={0.7}
-          onPress={() => navigation.navigate('UserProfileEdit',{currentEmail: loggedInEmail})}
-        >
-          <Image 
-            source={{ uri: 'https://randomuser.me/api/portraits/men/32.jpg' }} 
-            style={styles.avatarImage} 
-          />
-        </TouchableOpacity>
+        <View style={styles.headerRight}>
+          <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout}>
+            <Text style={styles.logoutText}>Logout</Text>
+          </TouchableOpacity>
+          <TouchableOpacity 
+            style={styles.profileAvatar} 
+            activeOpacity={0.7}
+            onPress={() => navigation.navigate('UserProfileEdit',{currentEmail: loggedInEmail})}
+          >
+            <Image 
+              source={{ uri: 'https://randomuser.me/api/portraits/men/32.jpg' }} 
+              style={styles.avatarImage} 
+            />
+          </TouchableOpacity>
+        </View>
       </View>
 
       <ScrollView 
@@ -77,6 +95,22 @@ const styles = StyleSheet.create({
   subtitle: {
     fontSize: 14,
     color: '#666666',
+  },
+  headerRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  logoutBtn: {
+    marginRight: 12,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    backgroundColor: '#FFEBEB',
+    borderRadius: 8,
+  },
+  logoutText: {
+    color: '#E74C3C',
+    fontWeight: '700',
+    fontSize: 13,
   },
   profileAvatar: {
     width: 50,
