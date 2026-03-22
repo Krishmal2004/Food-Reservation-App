@@ -19,7 +19,6 @@ import {
 import CustomerReservations from './resturant/CustomerReservations';
 import FoodPackages from './resturant/FoodPackages';
 import CustomerFeedbacks from './resturant/CustomerFeedbacks';
-
 const RestaurantDashboard = ({ route, navigation }: { route: any, navigation: any }) => {
   
   // 1. Get restaurant ID and Details passed from Login screen
@@ -32,7 +31,7 @@ const RestaurantDashboard = ({ route, navigation }: { route: any, navigation: an
   const [profile, setProfile] = useState({
     name: route?.params?.restaurantName || 'Italian Bistro',
     email: route?.params?.email || 'contact@italianbistro.com',
-    password: 'password123'
+    password: ''
   });
   
   const [profileMenuVisible, setProfileMenuVisible] = useState(false);
@@ -75,10 +74,42 @@ const RestaurantDashboard = ({ route, navigation }: { route: any, navigation: an
     Alert.alert("Logged Out", "You have been logged out successfully.");
   };
 
-  const handleSaveProfile = () => {
-    setProfile(tempProfile);
-    setProfileModalVisible(false);
-    Alert.alert("Success", "Profile updated successfully.");
+  const handleSaveProfile = async () => {
+    console.log("Frontend saving for is: ",loggedInRestaurantId);
+    if(!tempProfile.name || !tempProfile.email) {
+      Alert.alert("Validation Error", "Name and Email cannot be empty.");
+      return;
+    }
+    if(!loggedInRestaurantId) {
+      Alert.alert("Error","Resturant ID not found. Please log in again.");
+      return;
+    }
+    try {
+      const response = await fetch(`http://10.0.2.2:5000/api/auth/update-resturant-profile/${loggedInRestaurantId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+        body: JSON.stringify({
+          restaurantName: tempProfile.name,
+          email: tempProfile.email,
+          password: tempProfile.password
+        })
+      });
+      const data = await response.json();
+      if(response.ok) {
+        setProfile({
+          ...profile,
+          name: data.resturant.restaurantName,
+          email: data.resturant.email
+        });
+        setProfileModalVisible(false);
+        Alert.alert("Success", "Profile updated successfully.");
+      } else {
+        Alert.alert("Error", data.message || "Failed to update profile. Please try again.");
+      }
+    } catch (error) {
+      console.error("Profile update error: ",error);
+      Alert.alert("Network Error", "Could not connect to server. Please check your internet connection and try again.");
+    }
   };
 
   return (

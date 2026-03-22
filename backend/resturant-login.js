@@ -88,4 +88,39 @@ router.post('/restaurant-login', async (req,res)=>{
         res.status(500).json({message: 'Server error'});
     }
 });
+
+//Update resturant profile
+router.put('/update-resturant-profile/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { restaurantName, email, password } = req.body;
+        if (!restaurantName || !email) {
+            return res.status(400).json({ message: 'Name and email are required' });
+        }
+        let updateData = { restaurantName, email };
+        if (password && password.trim() !== '') {
+            const salt = await bcrypt.genSalt(10);
+            updateData.password = await bcrypt.hash(password, salt);
+        }
+        const updatedProfile = await resturant.findByIdAndUpdate(
+            id,
+            updateData,
+            { new: true, runValidators: true } 
+        );
+        if (!updatedProfile) {
+            return res.status(404).json({ message: 'Restaurant not found' });
+        }
+        res.status(200).json({
+            message: 'Restaurant profile updated successfully',
+            resturant: {
+                id: updatedProfile._id,
+                restaurantName: updatedProfile.restaurantName,
+                email: updatedProfile.email
+            }
+        });
+    } catch (error) {
+        console.error('Error updating restaurant profile:', error);
+        res.status(500).json({ message: 'Server error' });
+    }
+});
 module.exports = router;
