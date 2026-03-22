@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   StyleSheet, 
   View, 
@@ -8,53 +8,50 @@ import {
   TextInput,
   SafeAreaView,
   Platform,
-  StatusBar
+  StatusBar,
+  ActivityIndicator
 } from 'react-native';
-
-const RESTAURANTS = [
-  { 
-    id: '1', 
-    name: 'Italian Bistro', 
-    rating: 4.8, 
-    cuisine: 'Italian',
-    image: 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?q=80&w=1974',
-    packages: [
-      { id: 'p1', name: 'Couples Dinner', price: '$49.99' },
-      { id: 'p2', name: 'Family Feast', price: '$89.99' }
-    ],
-    reservationsAvailable: ['18:00', '19:30', '21:00']
-  },
-  { 
-    id: '2', 
-    name: 'Sushi Zen', 
-    rating: 4.9, 
-    cuisine: 'Japanese',
-    image: 'https://images.unsplash.com/photo-1579027989536-b7b1f875659b?q=80&w=2070',
-    packages: [
-      { id: 'p4', name: 'Sushi Boat VIP', price: '$120.00' },
-      { id: 'p5', name: 'Omakase', price: '$85.00' }
-    ],
-    reservationsAvailable: ['17:30', '19:00', '20:30']
-  },
-  { 
-    id: '3', 
-    name: 'Burger Joint', 
-    rating: 4.2, 
-    cuisine: 'American',
-    image: 'https://images.unsplash.com/photo-1550547660-d9450f859349?q=80&w=1965',
-    packages: [
-      { id: 'p3', name: 'Party Combo', price: '$29.99' }
-    ],
-    reservationsAvailable: ['12:00', '13:00', '14:30', '18:00']
-  },
-];
 
 const BookNow = ({ navigation }: any) => {
   const [searchQuery, setSearchQuery] = useState('');
+  const [restaurants, setRestaurants] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const filteredRestaurants = RESTAURANTS.filter(r => 
-    r.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
-    r.cuisine.toLowerCase().includes(searchQuery.toLowerCase())
+  // Fetch real restaurants from MongoDB
+  useEffect(() => {
+    const fetchRestaurants = async () => {
+      try {
+        const response = await fetch('http://10.0.2.2:5000/api/auth/all-resturants');
+        const data = await response.json();
+
+        if (response.ok && data.allResturants) {
+          const formattedRestaurants = data.allResturants.map((res: any, index: number) => ({
+            id: res._id,
+            name: res.restaurantName,
+            rating: (4 + Math.random()).toFixed(1), // Random rating between 4.0 - 5.0
+            cuisine: index % 2 === 0 ? 'International' : 'Continental',
+            image: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?q=80&w=2070', 
+            packages: [
+              { id: 'p1', name: 'Standard Package', price: '$49.99' }
+            ],
+            reservationsAvailable: ['18:00', '19:30', '21:00']
+          }));
+          
+          setRestaurants(formattedRestaurants);
+        }
+      } catch (error) {
+        console.error('Failed to fetch restaurants:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchRestaurants();
+  }, []);
+
+  const filteredRestaurants = restaurants.filter(r => 
+    r.name?.toLowerCase().includes(searchQuery.toLowerCase()) || 
+    r.cuisine?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   return (
@@ -90,37 +87,44 @@ const BookNow = ({ navigation }: any) => {
         </View>
       </View>
 
-      <ScrollView 
-        contentContainerStyle={styles.scrollContent} 
-        showsVerticalScrollIndicator={false}
-      >
-        {filteredRestaurants.map(restaurant => {
-          return (
-            <TouchableOpacity 
-              key={restaurant.id} 
-              style={styles.restaurantCard}
-              activeOpacity={0.9}
-              onPress={() => navigation.navigate('RestaurantDetails', { restaurant })}
-            >
-              <View style={styles.cardHeader}>
-                <View style={styles.cardTitleContainer}>
-                  <Text style={styles.restaurantName}>{restaurant.name}</Text>
-                  <Text style={styles.restaurantCuisine}>{restaurant.cuisine} • ★ {restaurant.rating}</Text>
+      {isLoading ? (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#FF5A5F" />
+          <Text style={styles.loadingText}>Loading restaurants...</Text>
+        </View>
+      ) : (
+        <ScrollView 
+          contentContainerStyle={styles.scrollContent} 
+          showsVerticalScrollIndicator={false}
+        >
+          {filteredRestaurants.map(restaurant => {
+            return (
+              <TouchableOpacity 
+                key={restaurant.id} 
+                style={styles.restaurantCard}
+                activeOpacity={0.9}
+                onPress={() => navigation.navigate('RestaurantDetails', { restaurant })}
+              >
+                <View style={styles.cardHeader}>
+                  <View style={styles.cardTitleContainer}>
+                    <Text style={styles.restaurantName}>{restaurant.name}</Text>
+                    <Text style={styles.restaurantCuisine}>{restaurant.cuisine} • ★ {restaurant.rating}</Text>
+                  </View>
+                  <View style={styles.navIconContainer}>
+                     <Text style={styles.navIconText}>❯</Text>
+                  </View>
                 </View>
-                <View style={styles.navIconContainer}>
-                   <Text style={styles.navIconText}>❯</Text>
-                </View>
-              </View>
-            </TouchableOpacity>
-          );
-        })}
+              </TouchableOpacity>
+            );
+          })}
 
-        {filteredRestaurants.length === 0 && (
-          <View style={styles.emptyContainer}>
-            <Text style={styles.emptyText}>No restaurants found matching "{searchQuery}".</Text>
-          </View>
-        )}
-      </ScrollView>
+          {filteredRestaurants.length === 0 && (
+            <View style={styles.emptyContainer}>
+              <Text style={styles.emptyText}>No restaurants found matching "{searchQuery}".</Text>
+            </View>
+          )}
+        </ScrollView>
+      )}
     </SafeAreaView>
   );
 };
@@ -129,6 +133,17 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#F8F9F9',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    marginTop: 12,
+    color: '#A0A0A0',
+    fontSize: 16,
+    fontWeight: '500',
   },
   header: {
     flexDirection: 'row',
@@ -217,6 +232,7 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     color: '#1A1A1A',
     marginBottom: 4,
+    textTransform: 'capitalize',
   },
   restaurantCuisine: {
     fontSize: 14,

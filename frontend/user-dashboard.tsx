@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   StyleSheet,
   View,
@@ -11,14 +11,37 @@ import {
   Platform,
   Alert,
 } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
 
-// Import the split components (adjust the path if they are inside a folder like './components/')
+// Import the split components
 import BookTableBanner from './user/BookTableBanner';
 import FoodPackagesList from './user/FoodPackagesList';
 import UserFeedbacks from './user/UserFeedbacks';
 
-const UserDashboard = ({ navigation,route }: { navigation: any; route: any }) => {
+const UserDashboard = ({ navigation, route }: { navigation: any; route: any }) => {
   const loggedInEmail = route?.params?.currentEmail;
+  const [userName, setUserName] = useState('User');
+  useFocusEffect(
+    useCallback(() => {
+      if (!loggedInEmail) return;
+
+      const fetchUserProfile = async () => {
+        try {
+          const response = await fetch(`http://10.0.2.2:5000/api/auth/profile/${loggedInEmail}`);
+          const data = await response.json();
+          
+          if (response.ok && data.user) {
+            const firstName = data.user.fullName.split(' ')[0];
+            setUserName(firstName);
+          }
+        } catch (error) {
+          console.error('Error fetching user profile:', error);
+        }
+      };
+
+      fetchUserProfile();
+    }, [loggedInEmail])
+  );
 
   const handleLogout = () => {
     Alert.alert(
@@ -38,7 +61,8 @@ const UserDashboard = ({ navigation,route }: { navigation: any; route: any }) =>
       {/* Top Header */}
       <View style={styles.header}>
         <View>
-          <Text style={styles.greeting}>Hello, John! 👋</Text>
+          {/* Replaced hardcoded "John" with the dynamic userName state */}
+          <Text style={styles.greeting}>Hello, {userName}! 👋</Text>
           <Text style={styles.subtitle}>Ready to satisfy your cravings?</Text>
         </View>
         <View style={styles.headerRight}>
@@ -48,7 +72,7 @@ const UserDashboard = ({ navigation,route }: { navigation: any; route: any }) =>
           <TouchableOpacity 
             style={styles.profileAvatar} 
             activeOpacity={0.7}
-            onPress={() => navigation.navigate('UserProfileEdit',{currentEmail: loggedInEmail})}
+            onPress={() => navigation.navigate('UserProfileEdit', { currentEmail: loggedInEmail })}
           >
             <Image 
               source={{ uri: 'https://randomuser.me/api/portraits/men/32.jpg' }} 
@@ -62,11 +86,9 @@ const UserDashboard = ({ navigation,route }: { navigation: any; route: any }) =>
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
       >
-        {/* Render the 3 separate components */}
         <BookTableBanner />
         <FoodPackagesList />
         <UserFeedbacks />
-
       </ScrollView>
     </SafeAreaView>
   );
@@ -91,6 +113,7 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     color: '#1A1A1A',
     marginBottom: 4,
+    textTransform: 'capitalize', 
   },
   subtitle: {
     fontSize: 14,

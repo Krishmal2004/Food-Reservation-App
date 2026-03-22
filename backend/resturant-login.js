@@ -123,4 +123,14 @@ router.put('/update-resturant-profile/:id', async (req, res) => {
         res.status(500).json({ message: 'Server error' });
     }
 });
+//Get the All resturant 
+router.get('/all-resturants', async (req,res) =>{
+    try {
+        const allResturants = await resturant.find().select('-password');
+        res.status(200).json({ allResturants });
+    } catch(error) {
+        console.error('Error fetching resturants:', error);
+        res.status(500).json({ message: 'Server error' });
+    }
+});
 module.exports = router;
