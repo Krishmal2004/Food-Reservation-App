@@ -15,7 +15,6 @@ import {
 } from 'react-native';
 
 const UserProfileEdit = ({ navigation }: { navigation: any }) => {
-  // Pre-filled mock data
   const [fullName, setFullName] = useState('John Doe');
   const [mobileNumber, setMobileNumber] = useState('+1 234 567 8900');
   const [email, setEmail] = useState('john.doe@example.com');
@@ -30,43 +29,43 @@ const UserProfileEdit = ({ navigation }: { navigation: any }) => {
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
-      
+
       {/* Custom Header */}
       <View style={styles.header}>
-        <TouchableOpacity 
-          style={styles.backButton}
+        {/* FIXED: Large, reliable tap target + hitSlop */}
+        <TouchableOpacity
+          style={styles.headerIconButton}
           onPress={() => navigation.goBack()}
-          hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }} 
+          activeOpacity={0.7}
+          hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
         >
           <Text style={styles.backButtonIcon}>❮</Text>
         </TouchableOpacity>
+
         <Text style={styles.headerTitle}>Edit Profile</Text>
-        <TouchableOpacity onPress={handleSave}>
-          <Text style={styles.saveText}>Save</Text>
-        </TouchableOpacity>
       </View>
 
-      <KeyboardAvoidingView 
-        style={styles.keyboardView} 
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      <KeyboardAvoidingView
+        style={styles.keyboardView}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
-        <ScrollView 
-          contentContainerStyle={styles.scrollContent} 
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
           {/* Profile Avatar Section */}
           <View style={styles.avatarContainer}>
             <View style={styles.avatarWrapper}>
-              <Image 
-                source={{ uri: 'https://randomuser.me/api/portraits/men/32.jpg' }} 
-                style={styles.avatarImage} 
+              <Image
+                source={{ uri: 'https://randomuser.me/api/portraits/men/32.jpg' }}
+                style={styles.avatarImage}
               />
-              <TouchableOpacity style={styles.editAvatarButton}>
+              <TouchableOpacity style={styles.editAvatarButton} activeOpacity={0.8}>
                 <Text style={styles.editAvatarIcon}>📷</Text>
               </TouchableOpacity>
             </View>
-            <TouchableOpacity>
+            <TouchableOpacity activeOpacity={0.6}>
               <Text style={styles.changePictureText}>Change Picture</Text>
             </TouchableOpacity>
           </View>
@@ -120,7 +119,7 @@ const UserProfileEdit = ({ navigation }: { navigation: any }) => {
               />
             </View>
 
-            <TouchableOpacity 
+            <TouchableOpacity
               style={styles.saveButton}
               activeOpacity={0.8}
               onPress={handleSave}
@@ -135,57 +134,64 @@ const UserProfileEdit = ({ navigation }: { navigation: any }) => {
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#FFFFFF',
-  },
+  container: { flex: 1, backgroundColor: '#FFFFFF' },
+
   header: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
+    justifyContent: 'space-between',
+    paddingHorizontal: 12,
+    // FIX: ensure header isn't too close to Android status bar
+    paddingTop: Platform.OS === 'android' ? (StatusBar.currentHeight || 0) : 0,
+    height: Platform.OS === 'android' ? 56 + (StatusBar.currentHeight || 0) : 56,
     borderBottomWidth: 1,
     borderBottomColor: '#F0F0F0',
+    backgroundColor: '#FFFFFF',
   },
-  backButton: {
-    padding: 8,
-    marginLeft: -8,
+
+  // Left icon button (Back)
+  headerIconButton: {
+    minWidth: 44,
+    minHeight: 44,
+    justifyContent: 'center',
+    alignItems: 'flex-start',
+    paddingHorizontal: 8,
   },
+
+  // Right text button (Save)
+  headerTextButton: {
+    minWidth: 44,
+    minHeight: 44,
+    justifyContent: 'center',
+    alignItems: 'flex-end',
+    paddingHorizontal: 8,
+  },
+
   backButtonIcon: {
-    fontSize: 20,
+    fontSize: 24,
     color: '#333333',
-    fontWeight: '700',
+    fontWeight: '800',
   },
+
   headerTitle: {
     fontSize: 18,
     fontWeight: '700',
     color: '#1A1A1A',
   },
+
   saveText: {
     fontSize: 16,
     fontWeight: '700',
-    color: '#FF5A5F', // Primary branding color
+    color: '#FF5A5F',
   },
-  keyboardView: {
-    flex: 1,
-  },
-  scrollContent: {
-    paddingBottom: 40,
-  },
-  avatarContainer: {
-    alignItems: 'center',
-    marginVertical: 30,
-  },
-  avatarWrapper: {
-    position: 'relative',
-    marginBottom: 12,
-  },
-  avatarImage: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-  },
+
+  keyboardView: { flex: 1 },
+  scrollContent: { paddingBottom: 40 },
+
+  avatarContainer: { alignItems: 'center', marginVertical: 30 },
+  avatarWrapper: { position: 'relative', marginBottom: 12 },
+  avatarImage: { width: 100, height: 100, borderRadius: 50 },
+
   editAvatarButton: {
     position: 'absolute',
     bottom: 0,
@@ -199,21 +205,13 @@ const styles = StyleSheet.create({
     borderWidth: 3,
     borderColor: '#FFFFFF',
   },
-  editAvatarIcon: {
-    fontSize: 14,
-    color: '#FFFFFF',
-  },
-  changePictureText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#FF5A5F',
-  },
-  formContainer: {
-    paddingHorizontal: 24,
-  },
-  inputGroup: {
-    marginBottom: 20,
-  },
+
+  editAvatarIcon: { fontSize: 14, color: '#FFFFFF' },
+  changePictureText: { fontSize: 14, fontWeight: '600', color: '#FF5A5F' },
+
+  formContainer: { paddingHorizontal: 24 },
+  inputGroup: { marginBottom: 20 },
+
   label: {
     fontSize: 14,
     fontWeight: '600',
@@ -221,6 +219,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     marginLeft: 4,
   },
+
   input: {
     backgroundColor: '#F7F7F7',
     height: 56,
@@ -231,8 +230,9 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#EFEFEF',
   },
+
   saveButton: {
-    backgroundColor: '#FF5A5F', 
+    backgroundColor: '#FF5A5F',
     height: 60,
     borderRadius: 30,
     justifyContent: 'center',
@@ -244,6 +244,7 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 6,
   },
+
   saveButtonText: {
     color: '#FFFFFF',
     fontSize: 18,

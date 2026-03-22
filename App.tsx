@@ -12,6 +12,9 @@ import UserProfileEdit from './frontend/user-profile-edit';
 import RestaurantSignup from './frontend/restaurant-signup';
 import RestaurantLogin from './frontend/restaurant-login';
 import RestaurantDashboard from './frontend/resturant-dashboard';
+import SeeAllPackages from './frontend/user/SeeAllPackages';
+import BookNow from './frontend/user/BookNow';
+import RestaurantDetails from './frontend/user/RestaurantDetails';
 const Stack = createNativeStackNavigator();
 
 const App = () => {
@@ -56,6 +59,21 @@ const App = () => {
         <Stack.Screen
           name="RestaurantDashboard"
           component={RestaurantDashboard}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="SeeAllPackages"
+          component={SeeAllPackages}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="BookNow"
+          component={BookNow}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="RestaurantDetails"
+          component={RestaurantDetails}
           options={{ headerShown: false }}
         />
       </Stack.Navigator>
