@@ -46,10 +46,30 @@ const CustomerReservations = ({ loggedInRestaurantId }: { loggedInRestaurantId?:
     setResModalVisible(true);
   };
 
-  const handleUpdateResStatus = (newStatus: string) => {
-    setReservations(reservations.map(r => r.id === selectedRes.id ? { ...r, status: newStatus } : r));
-    setSelectedRes({ ...selectedRes, status: newStatus });
-    Alert.alert("Status Updated", `Reservation marked as ${newStatus}.`);
+  // FIXED: Now actually tells the backend database to update the status!
+  const handleUpdateResStatus = async (newStatus: string) => {
+    if (!selectedRes) return;
+
+    try {
+      const response = await fetch(`http://10.0.2.2:5000/api/user/update-status/${selectedRes.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: newStatus })
+      });
+
+      if (response.ok) {
+        // Update the screen immediately if the database update was successful
+        setReservations(reservations.map(r => r.id === selectedRes.id ? { ...r, status: newStatus } : r));
+        setSelectedRes({ ...selectedRes, status: newStatus });
+        Alert.alert("Status Updated", `Reservation successfully marked as ${newStatus.toUpperCase()}.`);
+      } else {
+        const data = await response.json();
+        Alert.alert("Error", data.message || "Failed to update reservation status.");
+      }
+    } catch (error) {
+      console.error("Error updating status:", error);
+      Alert.alert("Network Error", "Could not connect to the backend server.");
+    }
   };
 
   return (
@@ -70,7 +90,7 @@ const CustomerReservations = ({ loggedInRestaurantId }: { loggedInRestaurantId?:
               <View
                 style={[
                   styles.statusBadge,
-                  res.status === 'confirmed'
+                  res.status === 'confirmed' || res.status === 'paid'
                     ? styles.statusConfirmed
                     : res.status === 'cancelled'
                       ? styles.statusCancelled
@@ -78,7 +98,7 @@ const CustomerReservations = ({ loggedInRestaurantId }: { loggedInRestaurantId?:
                 ]}
               >
                 <Text style={[styles.statusText, res.status === 'cancelled' && { color: '#FFF' }]}>
-                  {res.status}
+                  {res.status.toUpperCase()}
                 </Text>
               </View>
             </View>
@@ -133,32 +153,40 @@ const CustomerReservations = ({ loggedInRestaurantId }: { loggedInRestaurantId?:
 
                     <View style={styles.resDetailRow}>
                       <Text style={styles.resDetailLabel}>Current Status:</Text>
-                      <Text style={[styles.resDetailValue, { fontWeight: '700' }]}>{selectedRes.status}</Text>
+                      <Text style={[styles.resDetailValue, { fontWeight: '700' }]}>{selectedRes.status.toUpperCase()}</Text>
                     </View>
 
                     <Text style={[styles.inputLabel, { marginTop: 20 }]}>Update Status</Text>
-                    <View style={styles.statusActionRow}>
-                      <TouchableOpacity
-                        style={[styles.statusUpdateBtn, { backgroundColor: '#E8F5E9', borderColor: '#4CAF50' }]}
-                        onPress={() => handleUpdateResStatus('confirmed')}
-                      >
-                        <Text style={[styles.statusUpdateText, { color: '#2E7D32' }]}>Confirm</Text>
-                      </TouchableOpacity>
+                    
+                    {/* Hide status buttons if the user has already paid */}
+                    {selectedRes.status === 'paid' ? (
+                        <Text style={{textAlign: 'center', color: '#2E7D32', fontWeight: 'bold', marginVertical: 10}}>
+                            ✅ User has already paid for this reservation.
+                        </Text>
+                    ) : (
+                        <View style={styles.statusActionRow}>
+                        <TouchableOpacity
+                            style={[styles.statusUpdateBtn, { backgroundColor: '#E8F5E9', borderColor: '#4CAF50' }]}
+                            onPress={() => handleUpdateResStatus('confirmed')}
+                        >
+                            <Text style={[styles.statusUpdateText, { color: '#2E7D32' }]}>Confirm</Text>
+                        </TouchableOpacity>
 
-                      <TouchableOpacity
-                        style={[styles.statusUpdateBtn, { backgroundColor: '#FFF3E0', borderColor: '#FF9800' }]}
-                        onPress={() => handleUpdateResStatus('pending')}
-                      >
-                        <Text style={[styles.statusUpdateText, { color: '#E65100' }]}>Pending</Text>
-                      </TouchableOpacity>
+                        <TouchableOpacity
+                            style={[styles.statusUpdateBtn, { backgroundColor: '#FFF3E0', borderColor: '#FF9800' }]}
+                            onPress={() => handleUpdateResStatus('pending')}
+                        >
+                            <Text style={[styles.statusUpdateText, { color: '#E65100' }]}>Pending</Text>
+                        </TouchableOpacity>
 
-                      <TouchableOpacity
-                        style={[styles.statusUpdateBtn, { backgroundColor: '#FFEBEE', borderColor: '#F44336' }]}
-                        onPress={() => handleUpdateResStatus('cancelled')}
-                      >
-                        <Text style={[styles.statusUpdateText, { color: '#C62828' }]}>Cancel</Text>
-                      </TouchableOpacity>
-                    </View>
+                        <TouchableOpacity
+                            style={[styles.statusUpdateBtn, { backgroundColor: '#FFEBEE', borderColor: '#F44336' }]}
+                            onPress={() => handleUpdateResStatus('cancelled')}
+                        >
+                            <Text style={[styles.statusUpdateText, { color: '#C62828' }]}>Cancel</Text>
+                        </TouchableOpacity>
+                        </View>
+                    )}
 
                     <TouchableOpacity style={[styles.modalBtn, styles.cancelBtn, { marginTop: 20 }]} onPress={() => setResModalVisible(false)}>
                       <Text style={styles.cancelBtnText}>Close</Text>
@@ -174,6 +202,7 @@ const CustomerReservations = ({ loggedInRestaurantId }: { loggedInRestaurantId?:
   );
 };
 
+// ... keep existing styles
 const styles = StyleSheet.create({
   sectionContainer: { marginBottom: 30, paddingHorizontal: 24, zIndex: 1 },
   sectionTitle: { fontSize: 20, fontWeight: '700', color: '#1A1A1A', marginBottom: 16 },

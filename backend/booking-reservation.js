@@ -39,14 +39,10 @@ const reservationSchema = new mongoose.Schema({
         type: String,
         default: '',
     },
-    price: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'Food_Package',
-        required: false,
-    },
     status: {
         type: String,
-        enum: ['pending', 'confirmed', 'cancelled'],
+        // FIXED: Added 'paid' to the allowed statuses
+        enum: ['pending', 'confirmed', 'cancelled', 'paid'],
         default: 'pending',
     },
 },{timestamps: true});
@@ -57,7 +53,6 @@ router.post('/create-reservation', async(req,res) => {
     try {
         const {userEmail, restaurantId, packageId, customerName, date, time, guests, note} = req.body;
         
-        // FIXED: Removed customerName from this check. It will auto-fill below!
         if(!userEmail || !restaurantId || !date || !time || !guests) {
             return res.status(400).json({message: 'All fields are required'});
         }
@@ -91,6 +86,7 @@ router.post('/create-reservation', async(req,res) => {
         res.status(500).json({message: 'Server error'});
     }
 });
+
 //get the Reservation for a user
 router.get('/reservation/:userEmail', async(req,res) => {
     try {
@@ -112,6 +108,7 @@ router.get('/reservation/:userEmail', async(req,res) => {
         res.status(500).json({message: 'Server error'});
     }
 });
+
 //get the Reservation for a restaurant
 router.get('/reservation/resturant/:resturantId', async (req, res) => {
   try {
@@ -138,4 +135,38 @@ router.get('/reservation/resturant/:resturantId', async (req, res) => {
     res.status(500).json({ message: 'Server error' });
   }
 });
+
+//  Update Reservation Status
+router.put('/update-status/:id', async (req, res) => {
+    try {
+        const { status } = req.body;
+        const updatedReservation = await Reservation.findByIdAndUpdate(
+            req.params.id, 
+            { status: status.toLowerCase() }, 
+            { new: true }
+        );
+        if (!updatedReservation) {
+            return res.status(404).json({ message: 'Reservation not found' });
+        }
+        res.status(200).json({ message: 'Status updated', reservation: updatedReservation });
+    } catch (error) {
+        console.error('Error updating status:', error);
+        res.status(500).json({ message: 'Server error' });
+    }
+});
+
+//Delete a Reservation
+router.delete('/delete-reservation/:id', async (req, res) => {
+    try {
+        const deletedReservation = await Reservation.findByIdAndDelete(req.params.id);
+        if (!deletedReservation) {
+            return res.status(404).json({ message: 'Reservation not found' });
+        }
+        res.status(200).json({ message: 'Reservation deleted successfully' });
+    } catch (error) {
+        console.error('Error deleting reservation:', error);
+        res.status(500).json({ message: 'Server error' });
+    }
+});
+
 module.exports = router;
