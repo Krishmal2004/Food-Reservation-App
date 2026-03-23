@@ -157,7 +157,7 @@ const RestaurantDashboard = ({ route, navigation }: { route: any, navigation: an
       >
 
         {/* COMPONENT 1: RESERVATIONS */}
-        <CustomerReservations />
+        <CustomerReservations loggedInRestaurantId={loggedInRestaurantId}/>
 
         {/* COMPONENT 2: FOOD PACKAGES */}
         <FoodPackages

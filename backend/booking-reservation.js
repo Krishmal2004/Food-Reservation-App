@@ -91,7 +91,7 @@ router.post('/create-reservation', async(req,res) => {
         res.status(500).json({message: 'Server error'});
     }
 });
-//get the Reservation 
+//get the Reservation for a user
 router.get('/reservation/:userEmail', async(req,res) => {
     try {
         const {userEmail} = req.params;
@@ -112,5 +112,30 @@ router.get('/reservation/:userEmail', async(req,res) => {
         res.status(500).json({message: 'Server error'});
     }
 });
+//get the Reservation for a restaurant
+router.get('/reservation/resturant/:resturantId', async (req, res) => {
+  try {
+    const { resturantId } = req.params;
+    const reservations = await Reservation.find({ resturantId })
+      .populate('packageId', 'title price')
+      .sort({ createdAt: -1 });
 
+    const formattedReservations = reservations.map((r) => ({
+      id: r._id,
+      customerName: r.customerName,
+      date: r.date,
+      time: r.time,
+      guests: r.guests,
+      notes: r.note || '',
+      packageName: r.packageId?.title || 'Standard Booking',
+      price: r.packageId?.price || '0',
+      status: r.status
+    }));
+
+    res.status(200).json({ reservations: formattedReservations });
+  } catch (error) {
+    console.error('Error fetching restaurant reservations:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
 module.exports = router;
