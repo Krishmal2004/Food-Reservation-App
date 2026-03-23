@@ -1,43 +1,116 @@
-import React, { useState } from 'react';
-import { StyleSheet, View, Text, TouchableOpacity, Modal, TouchableWithoutFeedback, Alert } from 'react-native';
+import React, { useState, useCallback } from 'react';
+import { StyleSheet, View, Text, TouchableOpacity, Modal, TouchableWithoutFeedback, Alert, ActivityIndicator } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
 
-const INITIAL_RESERVATIONS = [
-  { id: '1', customerName: 'Alice Smith', date: 'Today, 7:00 PM', guests: 2, status: 'Confirmed', notes: 'Anniversary dinner' },
-  { id: '2', customerName: 'Bob Jones', date: 'Tomorrow, 8:00 PM', guests: 4, status: 'Pending', notes: 'Window seat if possible' },
-];
+const CustomerReservations = ({ loggedInRestaurantId }: { loggedInRestaurantId?: string }) => {
+  const [reservations, setReservations] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-const CustomerReservations = () => {
-  const [reservations, setReservations] = useState(INITIAL_RESERVATIONS);
   const [resModalVisible, setResModalVisible] = useState(false);
   const [selectedRes, setSelectedRes] = useState<any>(null);
+
+  const fetchReservations = async () => {
+    if (!loggedInRestaurantId) {
+      setIsLoading(false);
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const response = await fetch(
+        `http://10.0.2.2:5000/api/user/reservation/resturant/${loggedInRestaurantId}`
+      );
+      const data = await response.json();
+
+      if (response.ok && data.reservations) {
+        setReservations(data.reservations);
+      } else {
+        setReservations([]);
+      }
+    } catch (error) {
+      console.error('Error fetching restaurant reservations:', error);
+      setReservations([]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useFocusEffect(
+    useCallback(() => {
+      fetchReservations();
+    }, [loggedInRestaurantId])
+  );
 
   const handleOpenResModal = (res: any) => {
     setSelectedRes(res);
     setResModalVisible(true);
   };
 
-  const handleUpdateResStatus = (newStatus: string) => {
-    setReservations(reservations.map(r => r.id === selectedRes.id ? { ...r, status: newStatus } : r));
-    setSelectedRes({ ...selectedRes, status: newStatus });
-    Alert.alert("Status Updated", `Reservation marked as ${newStatus}.`);
+  // FIXED: Now actually tells the backend database to update the status!
+  const handleUpdateResStatus = async (newStatus: string) => {
+    if (!selectedRes) return;
+
+    try {
+      const response = await fetch(`http://10.0.2.2:5000/api/user/update-status/${selectedRes.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: newStatus })
+      });
+
+      if (response.ok) {
+        // Update the screen immediately if the database update was successful
+        setReservations(reservations.map(r => r.id === selectedRes.id ? { ...r, status: newStatus } : r));
+        setSelectedRes({ ...selectedRes, status: newStatus });
+        Alert.alert("Status Updated", `Reservation successfully marked as ${newStatus.toUpperCase()}.`);
+      } else {
+        const data = await response.json();
+        Alert.alert("Error", data.message || "Failed to update reservation status.");
+      }
+    } catch (error) {
+      console.error("Error updating status:", error);
+      Alert.alert("Network Error", "Could not connect to the backend server.");
+    }
   };
 
   return (
     <View style={styles.sectionContainer}>
       <Text style={styles.sectionTitle}>Customer Reservations</Text>
-      
-      {reservations.map(res => (
-        <TouchableOpacity key={res.id} style={styles.card} onPress={() => handleOpenResModal(res)}>
-          <View style={styles.cardHeader}>
-            <Text style={styles.cardTitle}>{res.customerName}</Text>
-            <View style={[styles.statusBadge, res.status === 'Confirmed' ? styles.statusConfirmed : (res.status === 'Cancelled' ? styles.statusCancelled : styles.statusPending)]}>
-              <Text style={[styles.statusText, res.status === 'Cancelled' && {color: '#FFF'}]}>{res.status}</Text>
+
+      {!loggedInRestaurantId ? (
+        <Text style={{ color: 'red' }}>Restaurant ID missing. Please login again.</Text>
+      ) : isLoading ? (
+        <ActivityIndicator size="small" color="#FF5A5F" />
+      ) : reservations.length === 0 ? (
+        <Text style={{ color: '#666', fontStyle: 'italic' }}>No reservations yet.</Text>
+      ) : (
+        reservations.map(res => (
+          <TouchableOpacity key={res.id} style={styles.card} onPress={() => handleOpenResModal(res)}>
+            <View style={styles.cardHeader}>
+              <Text style={styles.cardTitle}>{res.customerName}</Text>
+              <View
+                style={[
+                  styles.statusBadge,
+                  res.status === 'confirmed' || res.status === 'paid'
+                    ? styles.statusConfirmed
+                    : res.status === 'cancelled'
+                      ? styles.statusCancelled
+                      : styles.statusPending
+                ]}
+              >
+                <Text style={[styles.statusText, res.status === 'cancelled' && { color: '#FFF' }]}>
+                  {res.status.toUpperCase()}
+                </Text>
+              </View>
             </View>
-          </View>
-          <Text style={styles.cardSubtitle}>{res.date} • {res.guests} Guests</Text>
-          <Text style={styles.clickHint}>Tap to view/edit</Text>
-        </TouchableOpacity>
-      ))}
+
+            <Text style={styles.cardSubtitle}>
+              {res.date} {res.time ? `• ${res.time}` : ''} • {res.guests} Guests
+            </Text>
+
+            <Text style={styles.clickHint}>Tap to view/edit</Text>
+          </TouchableOpacity>
+        ))
+      )}
 
       {/* Reservation Details Modal */}
       <Modal visible={resModalVisible} animationType="fade" transparent={true}>
@@ -48,41 +121,74 @@ const CustomerReservations = () => {
                 {selectedRes && (
                   <>
                     <Text style={styles.modalTitle}>Reservation Details</Text>
+
                     <View style={styles.resDetailRow}>
                       <Text style={styles.resDetailLabel}>Customer:</Text>
                       <Text style={styles.resDetailValue}>{selectedRes.customerName}</Text>
                     </View>
+
+                    <View style={styles.resDetailRow}>
+                      <Text style={styles.resDetailLabel}>Package:</Text>
+                      <Text style={styles.resDetailValue}>
+                        {selectedRes.packageName || 'Standard Booking'} (${selectedRes.price || '0'})
+                      </Text>
+                    </View>
+
                     <View style={styles.resDetailRow}>
                       <Text style={styles.resDetailLabel}>Date & Time:</Text>
-                      <Text style={styles.resDetailValue}>{selectedRes.date}</Text>
+                      <Text style={styles.resDetailValue}>
+                        {selectedRes.date} {selectedRes.time || ''}
+                      </Text>
                     </View>
+
                     <View style={styles.resDetailRow}>
                       <Text style={styles.resDetailLabel}>Guests:</Text>
                       <Text style={styles.resDetailValue}>{selectedRes.guests}</Text>
                     </View>
+
                     <View style={styles.resDetailRow}>
                       <Text style={styles.resDetailLabel}>Notes:</Text>
                       <Text style={styles.resDetailValue}>{selectedRes.notes || 'None'}</Text>
                     </View>
+
                     <View style={styles.resDetailRow}>
                       <Text style={styles.resDetailLabel}>Current Status:</Text>
-                      <Text style={[styles.resDetailValue, {fontWeight: '700'}]}>{selectedRes.status}</Text>
+                      <Text style={[styles.resDetailValue, { fontWeight: '700' }]}>{selectedRes.status.toUpperCase()}</Text>
                     </View>
 
-                    <Text style={[styles.inputLabel, {marginTop: 20}]}>Update Status</Text>
-                    <View style={styles.statusActionRow}>
-                      <TouchableOpacity style={[styles.statusUpdateBtn, {backgroundColor: '#E8F5E9', borderColor: '#4CAF50'}]} onPress={() => handleUpdateResStatus('Confirmed')}>
-                        <Text style={[styles.statusUpdateText, {color: '#2E7D32'}]}>Confirm</Text>
-                      </TouchableOpacity>
-                      <TouchableOpacity style={[styles.statusUpdateBtn, {backgroundColor: '#FFF3E0', borderColor: '#FF9800'}]} onPress={() => handleUpdateResStatus('Pending')}>
-                        <Text style={[styles.statusUpdateText, {color: '#E65100'}]}>Pending</Text>
-                      </TouchableOpacity>
-                      <TouchableOpacity style={[styles.statusUpdateBtn, {backgroundColor: '#FFEBEE', borderColor: '#F44336'}]} onPress={() => handleUpdateResStatus('Cancelled')}>
-                        <Text style={[styles.statusUpdateText, {color: '#C62828'}]}>Cancel</Text>
-                      </TouchableOpacity>
-                    </View>
+                    <Text style={[styles.inputLabel, { marginTop: 20 }]}>Update Status</Text>
+                    
+                    {/* Hide status buttons if the user has already paid */}
+                    {selectedRes.status === 'paid' ? (
+                        <Text style={{textAlign: 'center', color: '#2E7D32', fontWeight: 'bold', marginVertical: 10}}>
+                            ✅ User has already paid for this reservation.
+                        </Text>
+                    ) : (
+                        <View style={styles.statusActionRow}>
+                        <TouchableOpacity
+                            style={[styles.statusUpdateBtn, { backgroundColor: '#E8F5E9', borderColor: '#4CAF50' }]}
+                            onPress={() => handleUpdateResStatus('confirmed')}
+                        >
+                            <Text style={[styles.statusUpdateText, { color: '#2E7D32' }]}>Confirm</Text>
+                        </TouchableOpacity>
 
-                    <TouchableOpacity style={[styles.modalBtn, styles.cancelBtn, {marginTop: 20}]} onPress={() => setResModalVisible(false)}>
+                        <TouchableOpacity
+                            style={[styles.statusUpdateBtn, { backgroundColor: '#FFF3E0', borderColor: '#FF9800' }]}
+                            onPress={() => handleUpdateResStatus('pending')}
+                        >
+                            <Text style={[styles.statusUpdateText, { color: '#E65100' }]}>Pending</Text>
+                        </TouchableOpacity>
+
+                        <TouchableOpacity
+                            style={[styles.statusUpdateBtn, { backgroundColor: '#FFEBEE', borderColor: '#F44336' }]}
+                            onPress={() => handleUpdateResStatus('cancelled')}
+                        >
+                            <Text style={[styles.statusUpdateText, { color: '#C62828' }]}>Cancel</Text>
+                        </TouchableOpacity>
+                        </View>
+                    )}
+
+                    <TouchableOpacity style={[styles.modalBtn, styles.cancelBtn, { marginTop: 20 }]} onPress={() => setResModalVisible(false)}>
                       <Text style={styles.cancelBtnText}>Close</Text>
                     </TouchableOpacity>
                   </>
@@ -96,6 +202,7 @@ const CustomerReservations = () => {
   );
 };
 
+// ... keep existing styles
 const styles = StyleSheet.create({
   sectionContainer: { marginBottom: 30, paddingHorizontal: 24, zIndex: 1 },
   sectionTitle: { fontSize: 20, fontWeight: '700', color: '#1A1A1A', marginBottom: 16 },
