@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   StyleSheet, 
   View, 
@@ -12,18 +12,42 @@ import {
   Modal,
   KeyboardAvoidingView,
   Alert,
-  TextInput
+  TextInput,
+  ActivityIndicator
 } from 'react-native';
 
 const RestaurantDetails = ({ route, navigation }: any) => {
-  // FIXED: Extract BOTH restaurant and userEmail from the route
   const { restaurant, userEmail } = route?.params || {};
 
   const [feedbackModalVisible, setFeedbackModalVisible] = useState(false);
   const [rating, setRating] = useState(5);
   const [reviewText, setReviewText] = useState('');
   
+  const [foodPackages, setFoodPackages] = useState<any[]>([]);
+  const [isLoadingPackages, setIsLoadingPackages] = useState(true);
+  
   const currentDate = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+
+  useEffect(() => {
+    const fetchFoodPackages = async () => {
+      if (!restaurant?.id) return;
+      
+      try {
+        const response = await fetch(`http://10.0.2.2:5000/api/resturant/get-food-packages/${restaurant.id}`);
+        const data = await response.json();
+        
+        if (response.ok && data.packages) {
+          setFoodPackages(data.packages);
+        }
+      } catch (error) {
+        console.error("Error fetching packages:", error);
+      } finally {
+        setIsLoadingPackages(false);
+      }
+    };
+
+    fetchFoodPackages();
+  }, [restaurant?.id]);
 
   const handleFeedbackSubmit = async () => {
     if(!reviewText.trim()) {
@@ -38,10 +62,10 @@ const RestaurantDetails = ({ route, navigation }: any) => {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          userEmail: userEmail,         // FIXED: Send the real email we got from BookNow
-          restaurantId: restaurant.id,  // Safe to send
+          userEmail: userEmail,
+          restaurantId: restaurant.id,
           rating: rating,
-          text: reviewText              // FIXED: Matches 'text' in review.js backend
+          text: reviewText
         }),
       });
       
@@ -55,7 +79,6 @@ const RestaurantDetails = ({ route, navigation }: any) => {
           setReviewText('');
         },300);
       } else {
-        // This will show exactly what the backend is complaining about
         Alert.alert("Database Error", data.message || "Something went wrong");
       }
     } catch (error) {
@@ -124,33 +147,76 @@ const RestaurantDetails = ({ route, navigation }: any) => {
             <Text style={styles.sectionTitle}>Available Times Today</Text>
           </View>
           <View style={styles.timesContainer}>
-            {restaurant.reservationsAvailable.map((time: string) => (
-              <TouchableOpacity key={time} style={styles.timePill} activeOpacity={0.7}>
+            {restaurant.reservationsAvailable?.map((time: string) => (
+              <View key={time} style={styles.timePill}>
                 <Text style={styles.timeText}>{time}</Text>
-              </TouchableOpacity>
+              </View>
             ))}
           </View>
+          
+          {/* NEW: Button to book a table without a package */}
+          <TouchableOpacity 
+            style={styles.bookTableOnlyBtn} 
+            activeOpacity={0.8}
+            onPress={() => navigation.navigate('ReservationDetails', {
+              restaurant: restaurant,
+              userEmail: userEmail,
+              package: null // No package selected
+            })}
+          >
+            <Text style={styles.bookTableOnlyText}>Book Table Only</Text>
+          </TouchableOpacity>
         </View>
 
-        {/* Food Packages */}
+        {/* Dynamic Food Packages */}
         <View style={styles.section}>
            <View style={styles.sectionHeaderRow}>
             <Text style={styles.sectionIcon}>🍱</Text>
             <Text style={styles.sectionTitle}>Exclusive Packages</Text>
           </View>
-          <View style={styles.packagesContainer}>
-            {restaurant.packages.map((pkg: any) => (
-              <View key={pkg.id} style={styles.packageCard}>
-                <View style={{flex: 1}}>
-                  <Text style={styles.packageName}>{pkg.name}</Text>
-                  <Text style={styles.packagePrice}>{pkg.price}</Text>
+          
+          {isLoadingPackages ? (
+            <ActivityIndicator size="small" color="#FF5A5F" style={{ marginVertical: 20 }} />
+          ) : foodPackages.length > 0 ? (
+            <View style={styles.packagesContainer}>
+              {foodPackages.map((pkg: any) => (
+                <View key={pkg.id} style={styles.packageCard}>
+                  {pkg.image && (
+                    <Image 
+                      source={{ uri: pkg.image }} 
+                      style={{ width: 60, height: 60, borderRadius: 8, marginRight: 12 }} 
+                    />
+                  )}
+                  <View style={{flex: 1}}>
+                    <Text style={styles.packageName}>{pkg.title}</Text>
+                    <Text style={styles.packagePrice}>${pkg.price}</Text>
+                    {pkg.note && (
+                      <Text style={{ fontSize: 12, color: '#666', marginTop: 4 }} numberOfLines={2}>
+                        {pkg.note}
+                      </Text>
+                    )}
+                  </View>
+                  
+                  {/* FIXED: Navigate to ReservationDetails and pass the package data */}
+                  <TouchableOpacity 
+                    style={styles.bookBtn} 
+                    activeOpacity={0.8}
+                    onPress={() => navigation.navigate('ReservationDetails', {
+                      restaurant: restaurant,
+                      userEmail: userEmail,
+                      package: pkg // Send the selected package
+                    })}
+                  >
+                    <Text style={styles.bookBtnText}>Book</Text>
+                  </TouchableOpacity>
                 </View>
-                <TouchableOpacity style={styles.bookBtn} activeOpacity={0.8}>
-                  <Text style={styles.bookBtnText}>Book</Text>
-                </TouchableOpacity>
-              </View>
-            ))}
-          </View>
+              ))}
+            </View>
+          ) : (
+            <Text style={{ fontStyle: 'italic', color: '#888', textAlign: 'center', marginVertical: 10 }}>
+              No exclusive packages available at the moment.
+            </Text>
+          )}
         </View>
 
       </ScrollView>
@@ -216,7 +282,6 @@ const RestaurantDetails = ({ route, navigation }: any) => {
   );
 };
 
-// Styles remain identical
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F8F9F9' },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingBottom: 16, paddingTop: Platform.OS === 'android' ? (StatusBar.currentHeight || 0) + 16 : 16, backgroundColor: '#FFFFFF', borderBottomWidth: 1, borderBottomColor: '#EAECEE' },
@@ -236,9 +301,14 @@ const styles = StyleSheet.create({
   timesContainer: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
   timePill: { paddingHorizontal: 20, paddingVertical: 12, backgroundColor: '#FFFFFF', borderRadius: 12, borderWidth: 1, borderColor: '#EAECEE', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 4, elevation: 2 },
   timeText: { color: '#2C3E50', fontWeight: '800', fontSize: 15 },
+  
+  // NEW: Button style for booking just a table
+  bookTableOnlyBtn: { backgroundColor: '#FFF0F0', paddingVertical: 14, borderRadius: 12, alignItems: 'center', marginTop: 20, borderWidth: 1, borderColor: '#FFD5D5' },
+  bookTableOnlyText: { color: '#FF5A5F', fontWeight: '800', fontSize: 15 },
+  
   packagesContainer: { gap: 16 },
   packageCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#F8F9F9', padding: 20, borderRadius: 16, borderWidth: 1, borderColor: '#EAECEE' },
-  packageName: { fontSize: 16, fontWeight: '800', color: '#1A1A1A', marginBottom: 6 },
+  packageName: { fontSize: 16, fontWeight: '800', color: '#1A1A1A', marginBottom: 2 },
   packagePrice: { fontSize: 16, fontWeight: '800', color: '#FF5A5F' },
   bookBtn: { backgroundColor: '#FF5A5F', paddingHorizontal: 24, paddingVertical: 12, borderRadius: 12 },
   bookBtnText: { color: '#FFFFFF', fontWeight: '800', fontSize: 14 },

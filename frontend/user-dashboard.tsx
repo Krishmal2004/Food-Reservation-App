@@ -17,6 +17,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import BookTableBanner from './user/BookTableBanner';
 import FoodPackagesList from './user/FoodPackagesList';
 import UserFeedbacks from './user/UserFeedbacks';
+import MyReservations from './user/MyReservations';
 
 const UserDashboard = ({ navigation, route }: { navigation: any; route: any }) => {
   const loggedInEmail = route?.params?.currentEmail;
@@ -87,6 +88,7 @@ const UserDashboard = ({ navigation, route }: { navigation: any; route: any }) =
         contentContainerStyle={styles.scrollContent}
       >
         <BookTableBanner userEmail={loggedInEmail} />
+        <MyReservations userEmail={loggedInEmail} />
         <FoodPackagesList />
         <UserFeedbacks userEmail={loggedInEmail}/>
       </ScrollView>
