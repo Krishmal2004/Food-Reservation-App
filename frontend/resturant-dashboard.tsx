@@ -37,6 +37,7 @@ const RestaurantDashboard = ({ route, navigation }: { route: any, navigation: an
   const [profileMenuVisible, setProfileMenuVisible] = useState(false);
   const [profileModalVisible, setProfileModalVisible] = useState(false);
   const [tempProfile, setTempProfile] = useState({ ...profile });
+  const [activeTab, setActiveTab] = useState('reservations');
 
   const fetchPackages = async () => {
     if (!loggedInRestaurantId) return;
@@ -157,20 +158,56 @@ const RestaurantDashboard = ({ route, navigation }: { route: any, navigation: an
       >
 
         {/* COMPONENT 1: RESERVATIONS */}
-        <CustomerReservations loggedInRestaurantId={loggedInRestaurantId}/>
+        {activeTab === 'reservations' && (
+          <CustomerReservations loggedInRestaurantId={loggedInRestaurantId}/>
+        )}
 
         {/* COMPONENT 2: FOOD PACKAGES */}
-        <FoodPackages
-          loggedInRestaurantId={loggedInRestaurantId}
-          packages={packages}
-          setPackages={setPackages}
-          fetchPackages={fetchPackages}
-        />
+        {activeTab === 'packages' && (
+          <FoodPackages
+            loggedInRestaurantId={loggedInRestaurantId}
+            packages={packages}
+            setPackages={setPackages}
+            fetchPackages={fetchPackages}
+          />
+        )}
 
         {/* COMPONENT 3: FEEDBACKS */}
-        <CustomerFeedbacks loggedInRestaurantId={loggedInRestaurantId}/>
+        {activeTab === 'feedbacks' && (
+          <CustomerFeedbacks loggedInRestaurantId={loggedInRestaurantId}/>
+        )}
 
       </ScrollView>
+
+      {/* Mobile Bottom Menu */}
+      <View style={styles.bottomMenu}>
+        <TouchableOpacity 
+          style={styles.menuItem} 
+          onPress={() => setActiveTab('reservations')}
+          activeOpacity={0.7}
+        >
+          <Text style={[styles.menuText, activeTab === 'reservations' && styles.menuTextActiveIcon]}>📅</Text>
+          <Text style={[styles.menuTextSmall, activeTab === 'reservations' && styles.menuTextActive]}>Reservations</Text>
+        </TouchableOpacity>
+        
+        <TouchableOpacity 
+          style={styles.menuItem} 
+          onPress={() => setActiveTab('packages')}
+          activeOpacity={0.7}
+        >
+          <Text style={[styles.menuText, activeTab === 'packages' && styles.menuTextActiveIcon]}>🍔</Text>
+          <Text style={[styles.menuTextSmall, activeTab === 'packages' && styles.menuTextActive]}>Packages</Text>
+        </TouchableOpacity>
+        
+        <TouchableOpacity 
+          style={styles.menuItem} 
+          onPress={() => setActiveTab('feedbacks')}
+          activeOpacity={0.7}
+        >
+          <Text style={[styles.menuText, activeTab === 'feedbacks' && styles.menuTextActiveIcon]}>⭐</Text>
+          <Text style={[styles.menuTextSmall, activeTab === 'feedbacks' && styles.menuTextActive]}>Feedback</Text>
+        </TouchableOpacity>
+      </View>
 
       {/* Profile Edit Modal */}
       <Modal visible={profileModalVisible} animationType="slide" transparent={true}>
@@ -235,7 +272,47 @@ const styles = StyleSheet.create({
   dropdownItem: { paddingVertical: 12, paddingHorizontal: 16 },
   dropdownText: { fontSize: 15, fontWeight: '600', color: '#333' },
   divider: { height: 1, backgroundColor: '#F0F0F0' },
-  scrollContent: { paddingBottom: 40 },
+  scrollContent: { paddingBottom: 100 },
+  bottomMenu: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    alignItems: 'center',
+    backgroundColor: '#FFF',
+    borderTopWidth: 1,
+    borderTopColor: '#EAEAEA',
+    paddingVertical: 12,
+    paddingBottom: Platform.OS === 'ios' ? 24 : 12,
+    position: 'absolute',
+    bottom: 0,
+    width: '100%',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -3 },
+    shadowOpacity: 0.1,
+    shadowRadius: 5,
+    elevation: 8,
+    zIndex: 100,
+  },
+  menuItem: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    flex: 1,
+  },
+  menuText: {
+    fontSize: 22,
+    marginBottom: 4,
+    opacity: 0.4,
+  },
+  menuTextActiveIcon: {
+    opacity: 1,
+  },
+  menuTextSmall: {
+    fontSize: 12,
+    color: '#999',
+    fontWeight: '600',
+  },
+  menuTextActive: {
+    color: '#FF5A5F',
+  },
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', padding: 20 },
   modalContent: { backgroundColor: '#FFF', borderRadius: 16, padding: 24, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.25, shadowRadius: 4, elevation: 5 },
   modalTitle: { fontSize: 20, fontWeight: '700', color: '#1A1A1A', marginBottom: 20, textAlign: 'center' },
