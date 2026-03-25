@@ -158,7 +158,7 @@ const RestaurantDetails = ({ route, navigation }: any) => {
           <TouchableOpacity 
             style={styles.bookTableOnlyBtn} 
             activeOpacity={0.8}
-            onPress={() => navigation.navigate('ReservationDetails', {
+            onPress={() => navigation.navigate('TableDetails', {
               restaurant: restaurant,
               userEmail: userEmail,
               package: null // No package selected

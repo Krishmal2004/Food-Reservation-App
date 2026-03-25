@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { StyleSheet, View, Text, TouchableOpacity, ScrollView, Image, Modal, KeyboardAvoidingView, TextInput, Platform, Alert } from 'react-native';
 import { launchImageLibrary, ImageLibraryOptions } from 'react-native-image-picker';
+import TableReservation from './Table-Reservation';
 
 interface FoodPackagesProps {
   loggedInRestaurantId: string;
@@ -144,6 +145,7 @@ const FoodPackages: React.FC<FoodPackagesProps> = ({ loggedInRestaurantId, packa
   };
 
   return (
+    <>
     <View style={styles.sectionContainer}>
       <View style={styles.sectionHeaderRow}>
         <Text style={styles.sectionTitle}>Food Packages</Text>
@@ -211,6 +213,8 @@ const FoodPackages: React.FC<FoodPackagesProps> = ({ loggedInRestaurantId, packa
         </View>
       </Modal>
     </View>
+    <TableReservation loggedInRestaurantId={loggedInRestaurantId} />
+    </>
   );
 };
 
