@@ -20,6 +20,7 @@ import CustomerReservations from './resturant/CustomerReservations';
 import FoodPackages from './resturant/FoodPackages';
 import FunctionHallPackages from './resturant/FunctionHallPackages';
 import CustomerFeedbacks from './resturant/CustomerFeedbacks';
+import CustomerEventReservations from './resturant/CustomerEventReservations';
 const RestaurantDashboard = ({ route, navigation }: { route: any, navigation: any }) => {
 
   // 1. Get restaurant ID and Details passed from Login screen
@@ -176,7 +177,12 @@ const RestaurantDashboard = ({ route, navigation }: { route: any, navigation: an
           </>
         )}
 
-        {/* COMPONENT 3: FEEDBACKS */}
+        {/* COMPONENT 3: EVENT BOOKINGS */}
+        {activeTab === 'events' && (
+          <CustomerEventReservations loggedInRestaurantId={loggedInRestaurantId}/>
+        )}
+
+        {/* COMPONENT 4: FEEDBACKS */}
         {activeTab === 'feedbacks' && (
           <CustomerFeedbacks loggedInRestaurantId={loggedInRestaurantId}/>
         )}
@@ -203,6 +209,15 @@ const RestaurantDashboard = ({ route, navigation }: { route: any, navigation: an
           <Text style={[styles.menuTextSmall, activeTab === 'packages' && styles.menuTextActive]}>Packages</Text>
         </TouchableOpacity>
         
+        <TouchableOpacity 
+          style={styles.menuItem} 
+          onPress={() => setActiveTab('events')}
+          activeOpacity={0.7}
+        >
+          <Text style={[styles.menuText, activeTab === 'events' && styles.menuTextActiveIcon]}>🎉</Text>
+          <Text style={[styles.menuTextSmall, activeTab === 'events' && styles.menuTextActive]}>Events</Text>
+        </TouchableOpacity>
+
         <TouchableOpacity 
           style={styles.menuItem} 
           onPress={() => setActiveTab('feedbacks')}

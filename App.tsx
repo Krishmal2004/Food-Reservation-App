@@ -19,6 +19,7 @@ import ReservationDetails from './frontend/user/ReservationDetails';
 import TableDetails from './frontend/user/TableDetails';
 import TableReservationDetails from './frontend/user/TableResevationDetails';
 import Event_Booking from './frontend/user/Event_Booking';
+import EventReservationShow from './frontend/user/eventReservationShow';
 const Stack = createNativeStackNavigator();
 
 const App = () => {
@@ -98,6 +99,11 @@ const App = () => {
         <Stack.Screen 
           name="Event_Booking"
           component={Event_Booking}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen 
+          name="EventReservationShow"
+          component={EventReservationShow}
           options={{ headerShown: false }}
         />
       </Stack.Navigator>
