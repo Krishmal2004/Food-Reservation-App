@@ -12,7 +12,7 @@ const EventBookingBanner = ({userEmail}: {userEmail?: string}) => {
       onPress={() => navigation.navigate('Event_Booking', { currentEmail: userEmail })}
     >
       <ImageBackground 
-        source={{ uri: 'https://images.unsplash.com/photo-1549429402-39c4f5263654?q=80&w=2070' }} /* Image of a nice event hall */
+        source={{ uri: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?q=80&w=2070' }} /* Image of a nice event hall */
         style={styles.bookingBannerImage}
         imageStyle={{ borderRadius: 16 }}
       >

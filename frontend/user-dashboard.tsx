@@ -19,6 +19,7 @@ import EventBookingBanner from './user/EventBookingBanner';
 import FoodPackagesList from './user/FoodPackagesList';
 import UserFeedbacks from './user/UserFeedbacks';
 import MyReservations from './user/MyReservations';
+import MobileMenu from './user/mobileMenu';
 
 const UserDashboard = ({ navigation, route }: { navigation: any; route: any }) => {
   const loggedInEmail = route?.params?.currentEmail;
@@ -94,6 +95,9 @@ const UserDashboard = ({ navigation, route }: { navigation: any; route: any }) =
         <FoodPackagesList />
         <UserFeedbacks userEmail={loggedInEmail}/>
       </ScrollView>
+
+      {/* Fixed Mobile Navigation Menu at the bottom */}
+      <MobileMenu loggedInEmail={loggedInEmail} activeTab="Home" />
     </SafeAreaView>
   );
 };
@@ -156,7 +160,7 @@ const styles = StyleSheet.create({
     borderRadius: 25,
   },
   scrollContent: {
-    paddingBottom: 40,
+    paddingBottom: 80,
   },
 });
 
