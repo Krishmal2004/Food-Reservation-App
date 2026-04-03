@@ -18,6 +18,7 @@ import {
 
 import CustomerReservations from './resturant/CustomerReservations';
 import FoodPackages from './resturant/FoodPackages';
+import FunctionHallPackages from './resturant/FunctionHallPackages';
 import CustomerFeedbacks from './resturant/CustomerFeedbacks';
 const RestaurantDashboard = ({ route, navigation }: { route: any, navigation: any }) => {
 
@@ -164,12 +165,15 @@ const RestaurantDashboard = ({ route, navigation }: { route: any, navigation: an
 
         {/* COMPONENT 2: FOOD PACKAGES */}
         {activeTab === 'packages' && (
-          <FoodPackages
-            loggedInRestaurantId={loggedInRestaurantId}
-            packages={packages}
-            setPackages={setPackages}
-            fetchPackages={fetchPackages}
-          />
+          <>
+            <FoodPackages
+              loggedInRestaurantId={loggedInRestaurantId}
+              packages={packages}
+              setPackages={setPackages}
+              fetchPackages={fetchPackages}
+            />
+            <FunctionHallPackages loggedInRestaurantId={loggedInRestaurantId} />
+          </>
         )}
 
         {/* COMPONENT 3: FEEDBACKS */}

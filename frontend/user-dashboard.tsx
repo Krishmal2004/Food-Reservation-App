@@ -15,6 +15,7 @@ import { useFocusEffect } from '@react-navigation/native';
 
 // Import the split components
 import BookTableBanner from './user/BookTableBanner';
+import EventBookingBanner from './user/EventBookingBanner';
 import FoodPackagesList from './user/FoodPackagesList';
 import UserFeedbacks from './user/UserFeedbacks';
 import MyReservations from './user/MyReservations';
@@ -88,6 +89,7 @@ const UserDashboard = ({ navigation, route }: { navigation: any; route: any }) =
         contentContainerStyle={styles.scrollContent}
       >
         <BookTableBanner userEmail={loggedInEmail} />
+        <EventBookingBanner userEmail={loggedInEmail} />
         <MyReservations userEmail={loggedInEmail} />
         <FoodPackagesList />
         <UserFeedbacks userEmail={loggedInEmail}/>

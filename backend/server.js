@@ -10,6 +10,7 @@ const foodPackageRouter = require('./food-package');
 const reviewRouter = require('./review');
 const reservation = require('./booking-reservation');
 const tablePackageRouter = require('./table-package');
+const functionHallRouter = require('./function-hall');  
 
 const app = express();
 
@@ -28,6 +29,8 @@ app.use('/api/resturant', foodPackageRouter);
 app.use('/api/user', reviewRouter);
 app.use('/api/user', reservation);
 app.use('/api/resturant', tablePackageRouter);
+app.use('/api/resturant', functionHallRouter);
+
 //Add the payload limits for handling large images
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
