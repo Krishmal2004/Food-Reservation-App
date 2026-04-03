@@ -1,31 +1,31 @@
-import React from 'react';
-import { StyleSheet, View, Text, TouchableOpacity, ScrollView, Image } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { StyleSheet, View, Text, TouchableOpacity, ScrollView, Image, ActivityIndicator } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 //import SeeAllPackages from './SeeAllPackages';
 
-const FOOD_PACKAGES = [
-  { 
-    id: '1', 
-    title: 'Couples Dinner', 
-    price: '$49.99', 
-    image: 'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?q=80&w=1974' 
-  },
-  { 
-    id: '2', 
-    title: 'Family Feast', 
-    price: '$89.99', 
-    image: 'https://images.unsplash.com/photo-1544025162-d76694265947?q=80&w=2069' 
-  },
-  { 
-    id: '3', 
-    title: 'Party Special', 
-    price: '$129.99', 
-    image: 'https://images.unsplash.com/photo-1555244162-803834f70033?q=80&w=2070' 
-  },
-];
-
 const FoodPackagesList = () => {
   const navigation = useNavigation<any>();
+  const [packages, setPackages] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchAllPackages = async () => {
+      try {
+        const response = await fetch('http://10.0.2.2:5000/api/resturant/get-all-food-packages');
+        const data = await response.json();
+        
+        if (response.ok && data.packages) {
+          setPackages(data.packages);
+        }
+      } catch (error) {
+        console.error('Error fetching food packages:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchAllPackages();
+  }, []);
 
   return (
     <View style={styles.sectionContainer}>
@@ -35,24 +35,36 @@ const FoodPackagesList = () => {
           <Text style={styles.seeAllText}>See All</Text>
         </TouchableOpacity>
       </View>
-      <ScrollView 
-        horizontal 
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.horizontalScroll}
-      >
-        {FOOD_PACKAGES.map(pkg => (
-          <TouchableOpacity key={pkg.id} style={styles.packageCard} activeOpacity={0.9}>
-            <Image source={{ uri: pkg.image }} style={styles.packageImage} />
-            <View style={styles.packageInfo}>
-              <Text style={styles.packageTitle}>{pkg.title}</Text>
-              <Text style={styles.packagePrice}>{pkg.price}</Text>
-              <TouchableOpacity style={styles.reserveButtonWrapper}>
-                <Text style={styles.reserveButtonText}>Reserve</Text>
-              </TouchableOpacity>
-            </View>
-          </TouchableOpacity>
-        ))}
-      </ScrollView>
+
+      {loading ? (
+        <ActivityIndicator size="large" color="#FF5A5F" style={styles.loader} />
+      ) : (
+        <ScrollView 
+          horizontal 
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.horizontalScroll}
+        >
+          {packages.map(pkg => (
+            <TouchableOpacity key={pkg.id} style={styles.packageCard} activeOpacity={0.9}>
+              <Image source={{ uri: pkg.image }} style={styles.packageImage} />
+              <View style={styles.packageInfo}>
+                <Text style={styles.packageTitle} numberOfLines={1}>{pkg.title}</Text>
+                
+                {/* Checks if the price already includes a currency symbol, if not, prepends a '$' */}
+                <Text style={styles.packagePrice}>
+                  {pkg.price.startsWith('$') || pkg.price.startsWith('Rs') || pkg.price.startsWith('€') 
+                    ? pkg.price 
+                    : `$${pkg.price}`}
+                </Text>
+
+                <TouchableOpacity style={styles.reserveButtonWrapper}>
+                  <Text style={styles.reserveButtonText}>Reserve</Text>
+                </TouchableOpacity>
+              </View>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+      )}
     </View>
   );
 };
@@ -77,6 +89,9 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
     color: '#FF5A5F',
+  },
+  loader: {
+    marginVertical: 20,
   },
   horizontalScroll: {
     paddingLeft: 24,

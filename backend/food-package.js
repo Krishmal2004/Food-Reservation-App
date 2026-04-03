@@ -126,4 +126,23 @@ router.delete('/delete-food-package/:id', async(req,res)=>{
         res.status(500).json({message: 'Server error'});
     }
 });
+
+//Fetching all food packages for customers
+router.get('/get-all-food-packages', async(req,res) => {
+    try {
+        const packages = await foodPackage.find();
+        const formattedPackages = packages.map(pkg => ({
+            id: pkg._id.toString(),
+            resturantId: pkg.resturantId,
+            title: pkg.title,
+            price: pkg.price,
+            note: pkg.note,
+            image: pkg.image
+        }));
+        res.status(200).json({ packages: formattedPackages });
+    } catch (error) {
+        console.error('Error fetching food packages:', error);
+        res.status(500).json({ message: 'Server error' });  
+    }
+});
 module.exports = router;

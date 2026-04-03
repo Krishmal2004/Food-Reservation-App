@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   StyleSheet, 
   View, 
@@ -8,19 +8,33 @@ import {
   Image, 
   SafeAreaView,
   Platform,
-  StatusBar
+  StatusBar,
+  ActivityIndicator
 } from 'react-native';
 
-const ALL_PACKAGES = [
-  { id: '1', title: 'Couples Dinner', price: '$49.99', image: 'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?q=80&w=1974' },
-  { id: '2', title: 'Family Feast', price: '$89.99', image: 'https://images.unsplash.com/photo-1544025162-d76694265947?q=80&w=2069' },
-  { id: '3', title: 'Party Special', price: '$129.99', image: 'https://images.unsplash.com/photo-1555244162-803834f70033?q=80&w=2070' },
-  { id: '4', title: 'Weekend Brunch', price: '$39.99', image: 'https://images.unsplash.com/photo-1525648199074-cee30ba79a4a?q=80&w=2070' },
-  { id: '5', title: 'Gourmet Selection', price: '$159.99', image: 'https://images.unsplash.com/photo-1550966871-3ed3cdb5ed0c?q=80&w=2070' },
-  { id: '6', title: 'Vegan Delight', price: '$69.99', image: 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?q=80&w=2070' },
-];
-
 const SeeAllPackages = ({ navigation }: any) => {
+  const [packages, setPackages] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchAllPackages = async () => {
+      try {
+        const response = await fetch('http://10.0.2.2:5000/api/resturant/get-all-food-packages');
+        const data = await response.json();
+        
+        if (response.ok && data.packages) {
+          setPackages(data.packages);
+        }
+      } catch (error) {
+        console.error('Error fetching all food packages:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchAllPackages();
+  }, []);
+
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
@@ -39,23 +53,40 @@ const SeeAllPackages = ({ navigation }: any) => {
         <View style={styles.headerSpacer} />
       </View>
 
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        {ALL_PACKAGES.map(pkg => (
-          <TouchableOpacity key={pkg.id} style={styles.packageCard} activeOpacity={0.9}>
-            <Image source={{ uri: pkg.image }} style={styles.packageImage} />
-            <View style={styles.packageInfo}>
-              <View style={styles.titleRow}>
-                <Text style={styles.packageTitle}>{pkg.title}</Text>
-                <Text style={styles.packagePrice}>{pkg.price}</Text>
+      {loading ? (
+        <View style={styles.loaderContainer}>
+          <ActivityIndicator size="large" color="#FF5A5F" />
+        </View>
+      ) : (
+        <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+          {packages.map(pkg => (
+            <TouchableOpacity key={pkg.id} style={styles.packageCard} activeOpacity={0.9}>
+              <Image source={{ uri: pkg.image }} style={styles.packageImage} />
+              <View style={styles.packageInfo}>
+                <View style={styles.titleRow}>
+                  <Text style={styles.packageTitle}>{pkg.title}</Text>
+                  
+                  {/* Checks if the price already includes a currency symbol, if not, prepends a '$' */}
+                  <Text style={styles.packagePrice}>
+                    {pkg.price.startsWith('$') || pkg.price.startsWith('Rs') || pkg.price.startsWith('€') 
+                      ? pkg.price 
+                      : `$${pkg.price}`}
+                  </Text>
+                </View>
+                
+                {/* Dynamically loads the note, falls back to a default description if none exists */}
+                <Text style={styles.packageDesc}>
+                  {pkg.note || 'A delicious and curated selection of dishes perfect for any occasion.'}
+                </Text>
+                
+                <TouchableOpacity style={styles.reserveBtn} activeOpacity={0.8}>
+                  <Text style={styles.reserveBtnText}>Reserve Package</Text>
+                </TouchableOpacity>
               </View>
-              <Text style={styles.packageDesc}>A delicious and curated selection of dishes perfect for any occasion.</Text>
-              <TouchableOpacity style={styles.reserveBtn} activeOpacity={0.8}>
-                <Text style={styles.reserveBtnText}>Reserve Package</Text>
-              </TouchableOpacity>
-            </View>
-          </TouchableOpacity>
-        ))}
-      </ScrollView>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+      )}
     </SafeAreaView>
   );
 };
@@ -98,6 +129,11 @@ const styles = StyleSheet.create({
   },
   headerSpacer: {
     width: 44,
+  },
+  loaderContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   scrollContent: {
     padding: 20,
