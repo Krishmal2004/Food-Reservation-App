@@ -168,14 +168,6 @@ If you're having issues getting the above steps to work, see the official [Troub
 Ensure your backend API base URL in your React Native code is pointing to your local machine's IP address (e.g., `http://192.168.x.x:5000/api`) and not `localhost`, as the Android emulator cannot resolve `localhost` directly to your development machine.
 
 ---
-## 👥Team Details 
-Group number: 
-* Member 1: IT24103866 - Obesekara S.O.K.D - Food Reservation (User)
-* Member 2: IT24101574 - Dhanapala N.N - User Management 
-* Member 3: IT24104109 - Kavibarath S. - Feedback Management
-* Member 4: IT24101666 - Nethmal J.A.D.D - Table Booking Management
-* Member 5: IT24102699 - Mummullage B.U.T - Food Management (Restaurant)
-* Member 6: IT24102308 - Mohommed M.H.S - Restaurant Profile Management 
 
 ## 📚 Learn More
 
