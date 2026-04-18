@@ -163,7 +163,7 @@ const FoodPackages: React.FC<FoodPackagesProps> = ({ loggedInRestaurantId, packa
               <Image source={{ uri: pkg.image }} style={styles.packageImage} />
               <View style={styles.packageInfo}>
                 <Text style={styles.packageTitle}>{pkg.title}</Text>
-                <Text style={styles.packagePrice}>{pkg.price}</Text>
+                <Text style={styles.packagePrice}>${pkg.price}</Text>
                 {pkg.note ? <Text style={styles.packageNote} numberOfLines={2}>{pkg.note}</Text> : null}
                 <View style={styles.actionRow}>
                   <TouchableOpacity style={[styles.actionBtn, styles.editBtn]} onPress={() => handleOpenEditPkgModal(pkg)}>
