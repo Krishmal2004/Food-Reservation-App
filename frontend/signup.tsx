@@ -80,7 +80,7 @@ const SignupScreen = ({ navigation }: { navigation: any }) => {
           {/* Back Button */}
           <TouchableOpacity 
             style={styles.backButton}
-            onPress={() => {navigation.navigate('Landing')}}
+            onPress={() => {navigation.navigate('Login')}}
             hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }} 
             activeOpacity={0.7}
           >
