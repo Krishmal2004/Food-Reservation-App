@@ -57,7 +57,7 @@ const LandingPage = ({ navigation }: { navigation: any }) => {
                     <TouchableOpacity 
                       style={styles.signupButton}
                       activeOpacity={0.8}
-                      onPress={() => { navigation.navigate('RestaurantSignup') }}
+                      onPress={() => { navigation.navigate('RestaurantLogin') }}
                     >
                       <Text style={styles.signupButtonText}>Restaurant</Text>
                     </TouchableOpacity>
