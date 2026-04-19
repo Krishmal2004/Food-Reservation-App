@@ -1,7 +1,9 @@
 import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { Image,View } from 'react-native';
+import { Image, View } from 'react-native';
+import { StripeProvider } from '@stripe/stripe-react-native';
+import { STRIPE_PUBLISHABLE_KEY } from '@env';
 
 // Import your screens
 import LandingPage from './frontend/index';
@@ -20,95 +22,98 @@ import TableDetails from './frontend/user/TableDetails';
 import TableReservationDetails from './frontend/user/TableResevationDetails';
 import Event_Booking from './frontend/user/Event_Booking';
 import EventReservationShow from './frontend/user/eventReservationShow';
+
 const Stack = createNativeStackNavigator();
 
 const App = () => {
   return (
-    <NavigationContainer>
-      <Stack.Navigator initialRouteName="Landing">
-        <Stack.Screen
-          name="Landing"
-          component={LandingPage}
-          options={{ headerShown: false }}
-        />
-        <Stack.Screen
-          name="Signup"
-          component={SignupScreen}
-          options={{ headerShown: false }}
-        />
-        <Stack.Screen
-          name="Login"
-          component={LoginScreen}
-          options={{ headerShown: false }}
-        />
-        <Stack.Screen 
-          name="UserDashboard"
-          component={UserDashboard}
-          options={{headerShown: false}}
-        />
-        <Stack.Screen
-          name="UserProfileEdit"
-          component={UserProfileEdit}
-          options={{ headerShown: false }}
-        />
-        <Stack.Screen
-          name="RestaurantSignup"
-          component={RestaurantSignup}
-          options={{ headerShown: false }}
-        />
-        <Stack.Screen
-          name="RestaurantLogin"
-          component={RestaurantLogin}
-          options={{ headerShown: false }}
-        />
-        <Stack.Screen
-          name="RestaurantDashboard"
-          component={RestaurantDashboard}
-          options={{ headerShown: false }}
-        />
-        <Stack.Screen
-          name="SeeAllPackages"
-          component={SeeAllPackages}
-          options={{ headerShown: false }}
-        />
-        <Stack.Screen
-          name="BookNow"
-          component={BookNow}
-          options={{ headerShown: false }}
-        />
-        <Stack.Screen
-          name="RestaurantDetails"
-          component={RestaurantDetails}
-          options={{ headerShown: false }}
-        />
-        <Stack.Screen
-          name="ReservationDetails"
-          component={ReservationDetails}
-          options={{ headerShown: false }}
-        />
-        <Stack.Screen
-          name="TableDetails"
-          component={TableDetails}
-          options={{ headerShown: false }}
-        />
-        <Stack.Screen
-          name="TableReservationDetails"
-          component={TableReservationDetails}
-          options={{ headerShown: false }}
-        />
-        <Stack.Screen 
-          name="Event_Booking"
-          component={Event_Booking}
-          options={{ headerShown: false }}
-        />
-        <Stack.Screen 
-          name="EventReservationShow"
-          component={EventReservationShow}
-          options={{ headerShown: false }}
-        />
-      </Stack.Navigator>
-    </NavigationContainer>
-    
+    // Wrap your app with StripeProvider to enable payment sheets across screens
+    <StripeProvider publishableKey={STRIPE_PUBLISHABLE_KEY}>
+      <NavigationContainer>
+        <Stack.Navigator initialRouteName="Landing">
+          <Stack.Screen
+            name="Landing"
+            component={LandingPage}
+            options={{ headerShown: false }}
+          />
+          <Stack.Screen
+            name="Signup"
+            component={SignupScreen}
+            options={{ headerShown: false }}
+          />
+          <Stack.Screen
+            name="Login"
+            component={LoginScreen}
+            options={{ headerShown: false }}
+          />
+          <Stack.Screen 
+            name="UserDashboard"
+            component={UserDashboard}
+            options={{headerShown: false}}
+          />
+          <Stack.Screen
+            name="UserProfileEdit"
+            component={UserProfileEdit}
+            options={{ headerShown: false }}
+          />
+          <Stack.Screen
+            name="RestaurantSignup"
+            component={RestaurantSignup}
+            options={{ headerShown: false }}
+          />
+          <Stack.Screen
+            name="RestaurantLogin"
+            component={RestaurantLogin}
+            options={{ headerShown: false }}
+          />
+          <Stack.Screen
+            name="RestaurantDashboard"
+            component={RestaurantDashboard}
+            options={{ headerShown: false }}
+          />
+          <Stack.Screen
+            name="SeeAllPackages"
+            component={SeeAllPackages}
+            options={{ headerShown: false }}
+          />
+          <Stack.Screen
+            name="BookNow"
+            component={BookNow}
+            options={{ headerShown: false }}
+          />
+          <Stack.Screen
+            name="RestaurantDetails"
+            component={RestaurantDetails}
+            options={{ headerShown: false }}
+          />
+          <Stack.Screen
+            name="ReservationDetails"
+            component={ReservationDetails}
+            options={{ headerShown: false }}
+          />
+          <Stack.Screen
+            name="TableDetails"
+            component={TableDetails}
+            options={{ headerShown: false }}
+          />
+          <Stack.Screen
+            name="TableReservationDetails"
+            component={TableReservationDetails}
+            options={{ headerShown: false }}
+          />
+          <Stack.Screen 
+            name="Event_Booking"
+            component={Event_Booking}
+            options={{ headerShown: false }}
+          />
+          <Stack.Screen 
+            name="EventReservationShow"
+            component={EventReservationShow}
+            options={{ headerShown: false }}
+          />
+        </Stack.Navigator>
+      </NavigationContainer>
+    </StripeProvider>
   );
 };
 
