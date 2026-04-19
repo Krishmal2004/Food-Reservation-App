@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'; // FIXED: Added useEffect
+import React, { useState, useEffect } from 'react';
 import { 
   StyleSheet, 
   View, 
@@ -10,21 +10,39 @@ import {
   Alert,
   Platform,
   StatusBar,
-  ActivityIndicator
+  ActivityIndicator,
+  Modal,
+  FlatList
 } from 'react-native';
+import DateTimePicker from '@react-native-community/datetimepicker';
+
+// Generate some standard time slots for the dropdown
+const TIME_SLOTS = [
+  '10:00 AM', '10:30 AM', '11:00 AM', '11:30 AM',
+  '12:00 PM', '12:30 PM', '01:00 PM', '01:30 PM',
+  '02:00 PM', '02:30 PM', '03:00 PM', '03:30 PM',
+  '04:00 PM', '04:30 PM', '05:00 PM', '05:30 PM',
+  '06:00 PM', '06:30 PM', '07:00 PM', '07:30 PM',
+  '08:00 PM', '08:30 PM', '09:00 PM', '09:30 PM', '10:00 PM'
+];
 
 const ReservationDetails = ({ route, navigation }: any) => {
   const { restaurant, userEmail, package: pkg } = route?.params || {};
 
   const [customerName, setCustomerName] = useState('');
-  const [date, setDate] = useState('');
-  const [time, setTime] = useState('');
   const [guests, setGuests] = useState('');
   const [note, setNote] = useState('');
-  
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // FIXED: Automatically fetch user's full name and fill the input box!
+  // Date State
+  const [date, setDate] = useState(''); // Stores the YYYY-MM-DD string
+  const [dateObj, setDateObj] = useState(new Date()); // Stores actual Date object
+  const [showDatePicker, setShowDatePicker] = useState(false);
+
+  // Time State
+  const [time, setTime] = useState('');
+  const [showTimeModal, setShowTimeModal] = useState(false);
+
   useEffect(() => {
     const fetchUserProfile = async () => {
       if (!userEmail) return;
@@ -33,7 +51,6 @@ const ReservationDetails = ({ route, navigation }: any) => {
         const data = await response.json();
         
         if (response.ok && data.user) {
-          // Capitalize the first letter of each word (e.g. "john doe" -> "John Doe")
           const formattedName = data.user.fullName
             .split(' ')
             .map((word: string) => word.charAt(0).toUpperCase() + word.slice(1))
@@ -48,6 +65,20 @@ const ReservationDetails = ({ route, navigation }: any) => {
 
     fetchUserProfile();
   }, [userEmail]);
+
+  const onDateChange = (event: any, selectedDate?: Date) => {
+    // On Android, we need to hide the picker immediately after selection
+    if (Platform.OS === 'android') {
+      setShowDatePicker(false);
+    }
+    
+    if (selectedDate) {
+      setDateObj(selectedDate);
+      // Format as YYYY-MM-DD
+      const formattedDate = selectedDate.toISOString().split('T')[0];
+      setDate(formattedDate);
+    }
+  };
 
   const handleConfirm = async () => {
     if (!customerName || !date || !time || !guests) {
@@ -69,7 +100,7 @@ const ReservationDetails = ({ route, navigation }: any) => {
         body: JSON.stringify({
           userEmail: userEmail,
           restaurantId: restaurant.id,
-          packageId: pkg?.id || null, // Optional
+          packageId: pkg?.id || null,
           customerName: customerName,
           date: date,
           time: time,
@@ -135,26 +166,43 @@ const ReservationDetails = ({ route, navigation }: any) => {
           />
         </View>
 
+        {/* DATE PICKER */}
         <View style={styles.formGroup}>
           <Text style={styles.label}>Date *</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="YYYY-MM-DD"
-            placeholderTextColor="#A0A0A0"
-            value={date}
-            onChangeText={setDate}
-          />
+          <TouchableOpacity 
+            style={styles.fakeInput} 
+            onPress={() => setShowDatePicker(true)}
+            activeOpacity={0.7}
+          >
+            <Text style={date ? styles.inputText : styles.placeholderText}>
+              {date ? date : 'Select Date'}
+            </Text>
+          </TouchableOpacity>
+
+          {showDatePicker && (
+            <DateTimePicker
+              value={dateObj}
+              mode="date"
+              display="default"
+              minimumDate={new Date()} // Prevent booking in the past
+              onChange={onDateChange}
+            />
+          )}
         </View>
 
+        {/* TIME DROPDOWN */}
         <View style={styles.formGroup}>
           <Text style={styles.label}>Time *</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="HH:MM AM/PM"
-            placeholderTextColor="#A0A0A0"
-            value={time}
-            onChangeText={setTime}
-          />
+          <TouchableOpacity 
+            style={styles.fakeInput} 
+            onPress={() => setShowTimeModal(true)}
+            activeOpacity={0.7}
+          >
+            <Text style={time ? styles.inputText : styles.placeholderText}>
+              {time ? time : 'Select Time'}
+            </Text>
+            <Text style={styles.dropdownIcon}>▼</Text>
+          </TouchableOpacity>
         </View>
 
         <View style={styles.formGroup}>
@@ -195,6 +243,42 @@ const ReservationDetails = ({ route, navigation }: any) => {
           )}
         </TouchableOpacity>
       </ScrollView>
+
+      {/* TIME SELECTION MODAL */}
+      <Modal
+        visible={showTimeModal}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={() => setShowTimeModal(false)}
+      >
+        <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={() => setShowTimeModal(false)}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Select Time</Text>
+            <FlatList
+              data={TIME_SLOTS}
+              keyExtractor={(item) => item}
+              showsVerticalScrollIndicator={false}
+              renderItem={({ item }) => (
+                <TouchableOpacity
+                  style={styles.timeOption}
+                  onPress={() => {
+                    setTime(item);
+                    setShowTimeModal(false);
+                  }}
+                >
+                  <Text style={[styles.timeOptionText, time === item && styles.timeOptionTextSelected]}>
+                    {item}
+                  </Text>
+                </TouchableOpacity>
+              )}
+            />
+            <TouchableOpacity style={styles.cancelModalButton} onPress={() => setShowTimeModal(false)}>
+              <Text style={styles.cancelModalText}>Cancel</Text>
+            </TouchableOpacity>
+          </View>
+        </TouchableOpacity>
+      </Modal>
+
     </SafeAreaView>
   );
 };
@@ -212,9 +296,23 @@ const styles = StyleSheet.create({
   formGroup: { marginBottom: 20 },
   label: { fontSize: 15, fontWeight: '700', color: '#2C3E50', marginBottom: 8 },
   input: { backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#EAECEE', borderRadius: 12, padding: 16, fontSize: 16, color: '#1A1A1A', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.03, shadowRadius: 4, elevation: 2 },
+  fakeInput: { backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#EAECEE', borderRadius: 12, padding: 16, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.03, shadowRadius: 4, elevation: 2 },
+  inputText: { fontSize: 16, color: '#1A1A1A' },
+  placeholderText: { fontSize: 16, color: '#A0A0A0' },
+  dropdownIcon: { fontSize: 12, color: '#A0A0A0' },
   textArea: { height: 120, textAlignVertical: 'top' },
   confirmButton: { backgroundColor: '#FF5A5F', paddingVertical: 18, borderRadius: 16, alignItems: 'center', marginTop: 20, shadowColor: '#FF5A5F', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.25, shadowRadius: 10, elevation: 6 },
-  confirmButtonText: { color: '#FFFFFF', fontSize: 18, fontWeight: '800' }
+  confirmButtonText: { color: '#FFFFFF', fontSize: 18, fontWeight: '800' },
+
+  // Modal Styles
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
+  modalContent: { backgroundColor: '#FFFFFF', borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, maxHeight: '60%' },
+  modalTitle: { fontSize: 20, fontWeight: '800', color: '#1A1A1A', marginBottom: 16, textAlign: 'center' },
+  timeOption: { paddingVertical: 16, borderBottomWidth: 1, borderBottomColor: '#F0F0F0', alignItems: 'center' },
+  timeOptionText: { fontSize: 16, color: '#333333', fontWeight: '500' },
+  timeOptionTextSelected: { color: '#FF5A5F', fontWeight: '800' },
+  cancelModalButton: { marginTop: 16, paddingVertical: 16, alignItems: 'center', backgroundColor: '#F8F9F9', borderRadius: 12 },
+  cancelModalText: { fontSize: 16, fontWeight: '700', color: '#E74C3C' }
 });
 
 export default ReservationDetails;
