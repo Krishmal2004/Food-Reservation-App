@@ -1,10 +1,15 @@
 import React, { useState, useCallback } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
+import { useStripe } from '@stripe/stripe-react-native';
 
 const MyReservations = ({ userEmail }: { userEmail: string }) => {
   const [reservations, setReservations] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [paymentLoadingId, setPaymentLoadingId] = useState<string | null>(null);
+
+  // Initialize Stripe hooks
+  const { initPaymentSheet, presentPaymentSheet } = useStripe();
 
   const fetchReservations = async () => {
     if (!userEmail) return;
@@ -57,32 +62,65 @@ const MyReservations = ({ userEmail }: { userEmail: string }) => {
     ]);
   };
 
-  const handlePayNow = (id: string, price: number) => {
-    Alert.alert('Payment', `Proceed to pay $${price} securely?`, [
-      { text: 'Cancel', style: 'cancel' },
-      { 
-        text: 'Pay Now', 
-        onPress: async () => {
-           try {
-             // Update status to 'paid' in the database
-             const response = await fetch(`http://10.0.2.2:5000/api/user/update-status/${id}`, {
-               method: 'PUT',
-               headers: { 'Content-Type': 'application/json' },
-               body: JSON.stringify({ status: 'paid' })
-             });
-             
-             if(response.ok) {
-               setReservations(prev => prev.map(r => r.id === id ? { ...r, status: 'paid' } : r));
-               Alert.alert('Payment Successful', 'Your reservation is now fully confirmed and paid!');
-             } else {
-               Alert.alert('Error', 'Payment failed to process.');
-             }
-           } catch (error) {
-             Alert.alert('Network Error', 'Could not connect to the server.');
-           }
+  const handlePayNow = async (id: string, price: number) => {
+    setPaymentLoadingId(id);
+
+    try {
+      const response = await fetch('http://10.0.2.2:5000/api/payment/create-payment-intent', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ amount: price, currency: 'usd' }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() =>({}));
+        Alert.alert('Payment Error', errorData.error || errorData.message || 'Failed to initialize payment intent.');
+        setPaymentLoadingId(null);
+        return;
+      }
+
+      const { clientSecret } = await response.json();
+
+      // 2. Initialize the Stripe Payment Sheet
+      const { error: initError } = await initPaymentSheet({
+        paymentIntentClientSecret: clientSecret,
+        merchantDisplayName: 'Restaurant Booking App',
+      });
+
+      if (initError) {
+        Alert.alert('Error', initError.message);
+        setPaymentLoadingId(null);
+        return;
+      }
+
+      // 3. Present the Payment Sheet to the user
+      const { error: presentError } = await presentPaymentSheet();
+
+      if (presentError) {
+        if (presentError.code !== 'Canceled') {
+          Alert.alert('Payment failed', presentError.message);
+        }
+      } else {
+        // 4. If payment is successful, update the reservation status to 'paid' in your DB
+        const updateResponse = await fetch(`http://10.0.2.2:5000/api/user/update-status/${id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status: 'paid' })
+        });
+        
+        if (updateResponse.ok) {
+          setReservations(prev => prev.map(r => r.id === id ? { ...r, status: 'paid' } : r));
+          Alert.alert('Payment Successful', 'Your reservation is now fully confirmed and paid!');
+        } else {
+          Alert.alert('Warning', 'Payment succeeded, but failed to update status. Please contact support.');
         }
       }
-    ]);
+    } catch (error) {
+      console.error('Payment flow error:', error);
+      Alert.alert('Network Error', 'Could not connect to the payment server.');
+    } finally {
+      setPaymentLoadingId(null);
+    }
   };
 
   if (!userEmail) return null;
@@ -99,6 +137,7 @@ const MyReservations = ({ userEmail }: { userEmail: string }) => {
         reservations.map((item) => {
           // Normalizing status to lowercase for comparison
           const currentStatus = item.status?.toLowerCase() || 'pending';
+          const isPayingThisItem = paymentLoadingId === item.id;
           
           return (
             <View key={item.id} style={styles.card}>
@@ -131,6 +170,7 @@ const MyReservations = ({ userEmail }: { userEmail: string }) => {
                   style={[styles.btn, styles.deleteBtn]}
                   onPress={() => handleDelete(item.id, item.restaurantName)}
                   activeOpacity={0.7}
+                  disabled={isPayingThisItem}
                 >
                   <Text style={styles.deleteBtnText}>Cancel</Text>
                 </TouchableOpacity>
@@ -138,11 +178,16 @@ const MyReservations = ({ userEmail }: { userEmail: string }) => {
                 {/* LOCKED UNTIL RESTAURANT CONFIRMS */}
                 {currentStatus === 'confirmed' && (
                   <TouchableOpacity 
-                    style={[styles.btn, styles.payBtn]}
+                    style={[styles.btn, styles.payBtn, isPayingThisItem && styles.payBtnDisabled]}
                     onPress={() => handlePayNow(item.id, item.price)}
                     activeOpacity={0.7}
+                    disabled={isPayingThisItem}
                   >
-                    <Text style={styles.payBtnText}>Pay Now</Text>
+                    {isPayingThisItem ? (
+                      <ActivityIndicator size="small" color="#FFFFFF" />
+                    ) : (
+                      <Text style={styles.payBtnText}>Pay Now</Text>
+                    )}
                   </TouchableOpacity>
                 )}
               </View>
@@ -176,6 +221,7 @@ const styles = StyleSheet.create({
   deleteBtn: { backgroundColor: '#FFF0F0', borderWidth: 1, borderColor: '#FFE0E0' },
   deleteBtnText: { color: '#E74C3C', fontWeight: '800', fontSize: 15 },
   payBtn: { backgroundColor: '#FF5A5F', shadowColor: '#FF5A5F', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.2, shadowRadius: 6, elevation: 4 },
+  payBtnDisabled: { backgroundColor: '#FFA0A3' },
   payBtnText: { color: '#FFFFFF', fontWeight: '800', fontSize: 15 },
   emptyContainer: { padding: 30, alignItems: 'center', backgroundColor: '#FFFFFF', borderRadius: 16, borderWidth: 1, borderColor: '#EAECEE', borderStyle: 'dashed' },
   emptyText: { color: '#AAB7B8', fontSize: 16, fontWeight: '600' }
