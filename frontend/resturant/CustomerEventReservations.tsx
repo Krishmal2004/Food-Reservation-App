@@ -168,23 +168,32 @@ const CustomerEventReservations = ({ loggedInRestaurantId }: { loggedInRestauran
                       <Text style={[styles.resDetailValue, { fontWeight: '700' }]}>{selectedRes.status ? selectedRes.status.toUpperCase() : 'PENDING'}</Text>
                     </View>
 
-                    <Text style={[styles.inputLabel, { marginTop: 20, textAlign: 'center' }]}>Manage Booking</Text>
-                    
-                    <View style={styles.statusActionRow}>
-                      <TouchableOpacity
-                        style={[styles.statusUpdateBtn, { backgroundColor: '#E8F5E9', borderColor: '#4CAF50' }]}
-                        onPress={() => handleUpdateResStatus('Confirmed')}
-                      >
-                        <Text style={[styles.statusUpdateText, { color: '#2E7D32' }]}>Accept</Text>
-                      </TouchableOpacity>
+                    {/* CONDITIONAL BUTTON RENDERING */}
+                    {selectedRes.status?.toLowerCase() !== 'cancelled' && selectedRes.status?.toLowerCase() !== 'paid' && (
+                      <>
+                        <Text style={[styles.inputLabel, { marginTop: 20, textAlign: 'center' }]}>Manage Booking</Text>
+                        
+                        <View style={styles.statusActionRow}>
+                          {/* Only show Accept if the booking is still pending */}
+                          {selectedRes.status?.toLowerCase() !== 'confirmed' && (
+                            <TouchableOpacity
+                              style={[styles.statusUpdateBtn, { backgroundColor: '#E8F5E9', borderColor: '#4CAF50' }]}
+                              onPress={() => handleUpdateResStatus('Confirmed')}
+                            >
+                              <Text style={[styles.statusUpdateText, { color: '#2E7D32' }]}>Accept</Text>
+                            </TouchableOpacity>
+                          )}
 
-                      <TouchableOpacity
-                        style={[styles.statusUpdateBtn, { backgroundColor: '#FFEBEE', borderColor: '#F44336' }]}
-                        onPress={() => handleUpdateResStatus('Cancelled')}
-                      >
-                        <Text style={[styles.statusUpdateText, { color: '#C62828' }]}>Cancel</Text>
-                      </TouchableOpacity>
-                    </View>
+                          {/* Always allow cancellation unless it is already cancelled or paid */}
+                          <TouchableOpacity
+                            style={[styles.statusUpdateBtn, { backgroundColor: '#FFEBEE', borderColor: '#F44336' }]}
+                            onPress={() => handleUpdateResStatus('Cancelled')}
+                          >
+                            <Text style={[styles.statusUpdateText, { color: '#C62828' }]}>Cancel</Text>
+                          </TouchableOpacity>
+                        </View>
+                      </>
+                    )}
 
                     <TouchableOpacity style={[styles.modalBtn, styles.cancelBtn, { marginTop: 20 }]} onPress={() => setResModalVisible(false)}>
                       <Text style={styles.cancelBtnText}>Close</Text>
