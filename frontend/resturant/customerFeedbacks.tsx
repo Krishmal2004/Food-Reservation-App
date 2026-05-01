@@ -1,6 +1,7 @@
 import React, { useState, useCallback } from 'react';
 import { StyleSheet, View, Text, ActivityIndicator } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
+import { BASE_URL } from '../api';
 
 const CustomerFeedbacks = ({ loggedInRestaurantId }: { loggedInRestaurantId?: string }) => {
   const [feedbacks, setFeedbacks] = useState<any[]>([]);
@@ -13,7 +14,7 @@ const CustomerFeedbacks = ({ loggedInRestaurantId }: { loggedInRestaurantId?: st
     }
     
     try {
-      const response = await fetch(`http://10.0.2.2:5000/api/user/restaurant-reviews/${loggedInRestaurantId}`);
+      const response = await fetch(`${BASE_URL}/api/user/restaurant-reviews/${loggedInRestaurantId}`);
       const data = await response.json();
       
       if (response.ok && data.reviews) {

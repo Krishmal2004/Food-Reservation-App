@@ -1,6 +1,7 @@
 import React, { useState, useCallback } from 'react';
 import { StyleSheet, View, Text, TouchableOpacity, Modal, TouchableWithoutFeedback, Alert, ActivityIndicator } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
+import { BASE_URL } from '../api';
 
 const CustomerEventReservations = ({ loggedInRestaurantId }: { loggedInRestaurantId?: string }) => {
   const [reservations, setReservations] = useState<any[]>([]);
@@ -18,7 +19,7 @@ const CustomerEventReservations = ({ loggedInRestaurantId }: { loggedInRestauran
     setIsLoading(true);
     try {
       const response = await fetch(
-        `http://10.0.2.2:5000/api/user/restaurant-bookings/${loggedInRestaurantId}`
+        `${BASE_URL}/api/user/restaurant-bookings/${loggedInRestaurantId}`
       );
       const data = await response.json();
 
@@ -52,7 +53,7 @@ const CustomerEventReservations = ({ loggedInRestaurantId }: { loggedInRestauran
     try {
       const resId = selectedRes._id || selectedRes.id;
 
-      const response = await fetch(`http://10.0.2.2:5000/api/user/update-event-status/${resId}`, {
+      const response = await fetch(`${BASE_URL}/api/user/update-event-status/${resId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: newStatus })

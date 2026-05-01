@@ -20,6 +20,7 @@ import FoodPackagesList from './user/FoodPackagesList';
 import UserFeedbacks from './user/UserFeedbacks';
 import MyReservations from './user/MyReservations';
 import MobileMenu from './user/mobileMenu';
+import { BASE_URL } from './api';
 
 const UserDashboard = ({ navigation, route }: { navigation: any; route: any }) => {
   const loggedInEmail = route?.params?.currentEmail;
@@ -30,7 +31,7 @@ const UserDashboard = ({ navigation, route }: { navigation: any; route: any }) =
 
       const fetchUserProfile = async () => {
         try {
-          const response = await fetch(`http://10.0.2.2:5000/api/auth/profile/${loggedInEmail}`);
+          const response = await fetch(`${BASE_URL}/api/auth/profile/${loggedInEmail}`);
           const data = await response.json();
           
           if (response.ok && data.user) {

@@ -15,6 +15,7 @@ import {
 } from 'react-native';
 import { launchImageLibrary, ImageLibraryOptions } from 'react-native-image-picker';
 import DateTimePicker from '@react-native-community/datetimepicker'; 
+import { BASE_URL } from '../api';
 
 interface FunctionHallPackagesProps {
   loggedInRestaurantId: string;
@@ -55,7 +56,7 @@ const FunctionHallPackages: React.FC<FunctionHallPackagesProps> = ({ loggedInRes
     if (!loggedInRestaurantId) return;
     setIsLoading(true);
     try {
-      const response = await fetch(`http://10.0.2.2:5000/api/resturant/get-hall-packages/${loggedInRestaurantId}`);
+      const response = await fetch(`${BASE_URL}/api/resturant/get-hall-packages/${loggedInRestaurantId}`);
       const data = await response.json();
       if (response.ok && data.packages) {
         setPackages(data.packages);
@@ -107,7 +108,7 @@ const FunctionHallPackages: React.FC<FunctionHallPackagesProps> = ({ loggedInRes
         style: "destructive", 
         onPress: async () => {
           try {
-            const response = await fetch(`http://10.0.2.2:5000/api/resturant/delete-hall-package/${id}`, {
+            const response = await fetch(`${BASE_URL}/api/resturant/delete-hall-package/${id}`, {
               method: 'DELETE'
             });
             if (response.ok) {
@@ -178,8 +179,8 @@ const FunctionHallPackages: React.FC<FunctionHallPackagesProps> = ({ loggedInRes
     try {
       const isEditing = !!editingPackage;
       const url = isEditing 
-        ? `http://10.0.2.2:5000/api/resturant/update-hall-package/${editingPackage.id}`
-        : `http://10.0.2.2:5000/api/resturant/create-hall-package`;
+        ? `${BASE_URL}/api/resturant/update-hall-package/${editingPackage.id}`
+        : `${BASE_URL}/api/resturant/create-hall-package`;
       
       const response = await fetch(url, {
         method: isEditing ? 'PUT' : 'POST',

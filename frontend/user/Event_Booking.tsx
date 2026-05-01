@@ -16,6 +16,7 @@ import {
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import DateTimePicker from '@react-native-community/datetimepicker'; 
+import { BASE_URL } from '../api';
 
 const timeOptions = [
   '08:00 AM', '09:00 AM', '10:00 AM', '11:00 AM',
@@ -49,7 +50,7 @@ const Event_Booking = ({ route }: { route: any }) => {
   useEffect(() => {
     const fetchPackages = async () => {
       try {
-        const response = await fetch('http://10.0.2.2:5000/api/resturant/get-all-hall-packages');
+        const response = await fetch(`${BASE_URL}/api/resturant/get-all-hall-packages`);
         const data = await response.json();
         if (response.ok && data.packages) {
           setPackages(data.packages);
@@ -95,7 +96,7 @@ const Event_Booking = ({ route }: { route: any }) => {
     
     try {
       // Sending data to your backend
-      const response = await fetch('http://10.0.2.2:5000/api/user/create-booking', {
+      const response = await fetch(`${BASE_URL}/api/user/create-booking`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

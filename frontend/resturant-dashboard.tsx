@@ -21,6 +21,7 @@ import FoodPackages from './resturant/FoodPackages';
 import FunctionHallPackages from './resturant/FunctionHallPackages';
 import CustomerFeedbacks from './resturant/CustomerFeedbacks';
 import CustomerEventReservations from './resturant/CustomerEventReservations';
+import { BASE_URL } from './api';
 const RestaurantDashboard = ({ route, navigation }: { route: any, navigation: any }) => {
 
   // 1. Get restaurant ID and Details passed from Login screen
@@ -45,7 +46,7 @@ const RestaurantDashboard = ({ route, navigation }: { route: any, navigation: an
     if (!loggedInRestaurantId) return;
 
     try {
-      const response = await fetch(`http://10.0.2.2:5000/api/resturant/get-food-packages/${loggedInRestaurantId}`);
+      const response = await fetch(`${BASE_URL}/api/resturant/get-food-packages/${loggedInRestaurantId}`);
       const rawText = await response.text();
       try {
         const data = JSON.parse(rawText);
@@ -88,7 +89,7 @@ const RestaurantDashboard = ({ route, navigation }: { route: any, navigation: an
       return;
     }
     try {
-      const response = await fetch(`http://10.0.2.2:5000/api/auth/update-resturant-profile/${loggedInRestaurantId}`, {
+      const response = await fetch(`${BASE_URL}/api/auth/update-resturant-profile/${loggedInRestaurantId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
         body: JSON.stringify({

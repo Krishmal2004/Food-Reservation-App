@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { StyleSheet, View, Text, TouchableOpacity, ScrollView, Image, ActivityIndicator } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
+import { BASE_URL } from '../api';
 //import SeeAllPackages from './SeeAllPackages';
 
 const FoodPackagesList = () => {
@@ -11,7 +12,7 @@ const FoodPackagesList = () => {
   useEffect(() => {
     const fetchAllPackages = async () => {
       try {
-        const response = await fetch('http://10.0.2.2:5000/api/resturant/get-all-food-packages');
+        const response = await fetch(`${BASE_URL}/api/resturant/get-all-food-packages`);
         const data = await response.json();
         
         if (response.ok && data.packages) {

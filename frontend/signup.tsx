@@ -13,6 +13,7 @@ import {
   useWindowDimensions,
   Alert,
 } from 'react-native';
+import { BASE_URL } from './api';
 
 const SignupScreen = ({ navigation }: { navigation: any }) => {
   const [fullName, setFullName] = useState('');
@@ -34,7 +35,7 @@ const SignupScreen = ({ navigation }: { navigation: any }) => {
     setIsLoading(true);
 
     try {
-      const response = await fetch('http://10.0.2.2:5000/api/auth/register', {
+      const response = await fetch(`${BASE_URL}/api/auth/register`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

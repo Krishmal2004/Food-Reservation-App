@@ -15,6 +15,7 @@ import {
   TextInput,
   ActivityIndicator
 } from 'react-native';
+import { BASE_URL } from '../api';
 
 const RestaurantDetails = ({ route, navigation }: any) => {
   const { restaurant, userEmail } = route?.params || {};
@@ -33,7 +34,7 @@ const RestaurantDetails = ({ route, navigation }: any) => {
       if (!restaurant?.id) return;
       
       try {
-        const response = await fetch(`http://10.0.2.2:5000/api/resturant/get-food-packages/${restaurant.id}`);
+        const response = await fetch(`${BASE_URL}/api/resturant/get-food-packages/${restaurant.id}`);
         const data = await response.json();
         
         if (response.ok && data.packages) {
@@ -56,7 +57,7 @@ const RestaurantDetails = ({ route, navigation }: any) => {
     }
     
     try {
-      const response = await fetch('http://10.0.2.2:5000/api/user/add-review',{
+      const response = await fetch(`${BASE_URL}/api/user/add-review`,{
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'

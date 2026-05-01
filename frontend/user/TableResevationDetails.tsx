@@ -12,6 +12,7 @@ import {
   StatusBar,
   ActivityIndicator
 } from 'react-native';
+import { BASE_URL } from '../api';
 
 const TableReservationDetails = ({ route, navigation }: any) => {
   // EXTRACTED: tablePackage alongside pkg
@@ -36,7 +37,7 @@ const TableReservationDetails = ({ route, navigation }: any) => {
     const fetchUserProfile = async () => {
       if (!userEmail) return;
       try {
-        const response = await fetch(`http://10.0.2.2:5000/api/auth/profile/${userEmail}`);
+        const response = await fetch(`${BASE_URL}/api/auth/profile/${userEmail}`);
         const data = await response.json();
         
         if (response.ok && data.user) {
@@ -69,7 +70,7 @@ const TableReservationDetails = ({ route, navigation }: any) => {
     setIsSubmitting(true);
 
     try {
-      const response = await fetch('http://10.0.2.2:5000/api/user/create-reservation', {
+      const response = await fetch(`${BASE_URL}/api/user/create-reservation`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
