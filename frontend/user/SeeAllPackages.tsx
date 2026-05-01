@@ -11,6 +11,7 @@ import {
   StatusBar,
   ActivityIndicator
 } from 'react-native';
+import { BASE_URL } from '../api';
 
 const SeeAllPackages = ({ navigation }: any) => {
   const [packages, setPackages] = useState<any[]>([]);
@@ -19,7 +20,7 @@ const SeeAllPackages = ({ navigation }: any) => {
   useEffect(() => {
     const fetchAllPackages = async () => {
       try {
-        const response = await fetch('http://10.0.2.2:5000/api/resturant/get-all-food-packages');
+        const response = await fetch(`${BASE_URL}/api/resturant/get-all-food-packages`);
         const data = await response.json();
         
         if (response.ok && data.packages) {

@@ -14,6 +14,7 @@ import {
   Alert,
   ActivityIndicator,
 } from 'react-native';
+import { BASE_URL } from './api';
 
 const UserProfileEdit = ({ navigation, route }: { navigation: any, route: any }) => {
   // Replace this with the actual logged-in user's email passed from the previous screen
@@ -31,7 +32,7 @@ const UserProfileEdit = ({ navigation, route }: { navigation: any, route: any })
   useEffect(() => {
     const fetchUserData = async () => {
       try {
-        const response = await fetch(`http://10.0.2.2:5000/api/auth/profile/${currentEmail}`);
+        const response = await fetch(`${BASE_URL}/api/auth/profile/${currentEmail}`);
         const rawText = await response.text();
         try {
           const data = JSON.parse(rawText);
@@ -59,7 +60,7 @@ const UserProfileEdit = ({ navigation, route }: { navigation: any, route: any })
     }
     setIsLoading(true);
     try {
-      const response = await fetch(`http://10.0.2.2:5000/api/auth/update-profile/${currentEmail}`, {
+      const response = await fetch(`${BASE_URL}/api/auth/update-profile/${currentEmail}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

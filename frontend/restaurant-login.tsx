@@ -13,6 +13,7 @@ import {
   useWindowDimensions,
   Alert,
 } from 'react-native';
+import { BASE_URL } from './api';
 
 const RestaurantLogin = ({ navigation }: { navigation: any }) => {
   const [email, setEmail] = useState('');
@@ -28,7 +29,7 @@ const RestaurantLogin = ({ navigation }: { navigation: any }) => {
     }
     setIsLoading(true);
     try {
-      const response = await fetch('http://10.0.2.2:5000/api/auth/restaurant-login',{
+      const response = await fetch(`${BASE_URL}/api/auth/restaurant-login`,{
         method: 'POST',
         headers: {
           'content-Type': 'application/json'

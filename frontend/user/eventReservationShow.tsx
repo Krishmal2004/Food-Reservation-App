@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import MobileMenu from './mobileMenu';
+import { BASE_URL } from '../api';
 
 const EventReservationShow = ({ route }: { route: any }) => {
   const loggedInEmail = route?.params?.currentEmail;
@@ -23,7 +24,7 @@ const EventReservationShow = ({ route }: { route: any }) => {
     if (!loggedInEmail) return;
     setIsLoading(true);
     try {
-      const response = await fetch(`http://10.0.2.2:5000/api/user/user-booking/${loggedInEmail}`);
+      const response = await fetch(`${BASE_URL}/api/user/user-booking/${loggedInEmail}`);
       const data = await response.json();
       if (response.ok && data.bookings) {
         setBookings(data.bookings);

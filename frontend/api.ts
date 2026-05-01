@@ -1,0 +1,1 @@
+export const BASE_URL = 'https://krishmal-food-backend-h3e9enh0hre0dugs.southeastasia-01.azurewebsites.net';

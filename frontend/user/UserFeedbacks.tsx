@@ -12,6 +12,7 @@ import {
   Alert
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
+import { BASE_URL } from '../api';
 
 // Accept userEmail as a prop
 const UserFeedbacks = ({ userEmail }: { userEmail?: string }) => {
@@ -31,7 +32,7 @@ const UserFeedbacks = ({ userEmail }: { userEmail?: string }) => {
   const fetchFeedbacks = async () => {
     if (!userEmail) return;
     try {
-      const response = await fetch(`http://10.0.2.2:5000/api/user/show-reviews/${userEmail}`);
+      const response = await fetch(`${BASE_URL}/api/user/show-reviews/${userEmail}`);
       const data = await response.json();
       
       if (response.ok && data.reviews) {
@@ -82,7 +83,7 @@ const UserFeedbacks = ({ userEmail }: { userEmail?: string }) => {
   const confirmDelete = async() => {
     if(!selectedFeedback) return;
     try {
-      const response = await fetch(`http://10.0.2.2:5000/api/user/delete-review/${selectedFeedback.id}`,{
+      const response = await fetch(`${BASE_URL}/api/user/delete-review/${selectedFeedback.id}`,{
         method: 'DELETE',
       });
       if(response.ok) {
@@ -102,7 +103,7 @@ const UserFeedbacks = ({ userEmail }: { userEmail?: string }) => {
   const saveEdit = async() => {
     if(!selectedFeedback) return;
     try{
-      const response = await fetch(`http://10.0.2.2:5000/api/user/update-review/${selectedFeedback.id}`,{
+      const response = await fetch(`${BASE_URL}/api/user/update-review/${selectedFeedback.id}`,{
         method: 'PUT',
         headers: {
           'Content-type': 'application/json'

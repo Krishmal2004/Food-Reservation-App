@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { StyleSheet, View, Text, TouchableOpacity, ScrollView, Image, Modal, KeyboardAvoidingView, TextInput, Platform, Alert } from 'react-native';
 import { launchImageLibrary, ImageLibraryOptions } from 'react-native-image-picker';
 import TableReservation from './Table-Reservation';
+import { BASE_URL } from '../api';
 
 interface FoodPackagesProps {
   loggedInRestaurantId: string;
@@ -23,7 +24,7 @@ const FoodPackages: React.FC<FoodPackagesProps> = ({ loggedInRestaurantId, packa
         style: "destructive", 
         onPress: async () => {
           try {
-            const response = await fetch(`http://10.0.2.2:5000/api/resturant/delete-food-package/${id}`, {
+            const response = await fetch(`${BASE_URL}/api/resturant/delete-food-package/${id}`, {
               method: 'DELETE',
             });
 
@@ -96,8 +97,8 @@ const FoodPackages: React.FC<FoodPackagesProps> = ({ loggedInRestaurantId, packa
     try {
       const isEditing = !!editingPackage;
       const url = isEditing 
-        ? `http://10.0.2.2:5000/api/resturant/update-food-package/${editingPackage.id}`
-        : `http://10.0.2.2:5000/api/resturant/create-food-package`; 
+        ? `${BASE_URL}/api/resturant/update-food-package/${editingPackage.id}`
+        : `${BASE_URL}/api/resturant/create-food-package`; 
         
       const method = isEditing ? 'PUT' : 'POST';
 

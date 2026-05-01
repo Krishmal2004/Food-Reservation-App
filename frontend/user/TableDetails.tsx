@@ -13,6 +13,7 @@ import {
   LayoutAnimation,
   UIManager
 } from 'react-native';
+import { BASE_URL } from '../api';
 
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
   UIManager.setLayoutAnimationEnabledExperimental(true);
@@ -51,7 +52,7 @@ const TableDetails = ({ navigation, route }: any) => {
   const fetchTablePackages = async (restaurantId: string) => {
     setLoadingTables(prev => ({ ...prev, [restaurantId]: true }));
     try {
-      const response = await fetch(`http://10.0.2.2:5000/api/resturant/get-table-packages/${restaurantId}`);
+      const response = await fetch(`${BASE_URL}/api/resturant/get-table-packages/${restaurantId}`);
       const data = await response.json();
 
       if(response.ok && data.tables) {

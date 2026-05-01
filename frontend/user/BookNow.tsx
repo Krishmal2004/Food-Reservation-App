@@ -11,6 +11,7 @@ import {
   StatusBar,
   ActivityIndicator
 } from 'react-native';
+import { BASE_URL } from '../api';
 
 // FIXED: Added route to parameters
 const BookNow = ({ route, navigation }: any) => {
@@ -24,7 +25,7 @@ const BookNow = ({ route, navigation }: any) => {
   useEffect(() => {
     const fetchRestaurants = async () => {
       try {
-        const response = await fetch('http://10.0.2.2:5000/api/auth/all-resturants');
+        const response = await fetch(`${BASE_URL}/api/auth/all-resturants`);
         const data = await response.json();
 
         if (response.ok && data.allResturants) {

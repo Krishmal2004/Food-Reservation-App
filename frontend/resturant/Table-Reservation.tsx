@@ -13,6 +13,7 @@ import {
   ActivityIndicator 
 } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker'; 
+import { BASE_URL } from '../api';
 
 interface TableReservationProps {
   loggedInRestaurantId?: string;
@@ -52,7 +53,7 @@ const TableReservation: React.FC<TableReservationProps> = ({ loggedInRestaurantI
     if (!loggedInRestaurantId) return;
     setIsLoading(true);
     try {
-      const response = await fetch(`http://10.0.2.2:5000/api/resturant/get-table-packages/${loggedInRestaurantId}`);
+      const response = await fetch(`${BASE_URL}/api/resturant/get-table-packages/${loggedInRestaurantId}`);
       const data = await response.json();
       if (response.ok && data.tables) {
         setTables(data.tables);
@@ -76,7 +77,7 @@ const TableReservation: React.FC<TableReservationProps> = ({ loggedInRestaurantI
         style: "destructive", 
         onPress: async () => {
           try {
-            const response = await fetch(`http://10.0.2.2:5000/api/resturant/delete-table-package/${id}`, {
+            const response = await fetch(`${BASE_URL}/api/resturant/delete-table-package/${id}`, {
               method: 'DELETE'
             });
             if (response.ok) {
@@ -146,8 +147,8 @@ const TableReservation: React.FC<TableReservationProps> = ({ loggedInRestaurantI
     try {
       const isEditing = !!editingTable;
       const url = isEditing 
-        ? `http://10.0.2.2:5000/api/resturant/update-table-package/${editingTable.id}`
-        : `http://10.0.2.2:5000/api/resturant/create-table-package`;
+        ? `${BASE_URL}/api/resturant/update-table-package/${editingTable.id}`
+        : `${BASE_URL}/api/resturant/create-table-package`;
       
       const response = await fetch(url, {
         method: isEditing ? 'PUT' : 'POST',

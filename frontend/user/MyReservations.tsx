@@ -2,6 +2,7 @@ import React, { useState, useCallback } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { useStripe } from '@stripe/stripe-react-native';
+import { BASE_URL } from '../api';
 
 const MyReservations = ({ userEmail }: { userEmail: string }) => {
   const [reservations, setReservations] = useState<any[]>([]);
@@ -15,7 +16,7 @@ const MyReservations = ({ userEmail }: { userEmail: string }) => {
     if (!userEmail) return;
     setIsLoading(true);
     try {
-      const response = await fetch(`http://10.0.2.2:5000/api/user/reservation/${userEmail}`);
+      const response = await fetch(`${BASE_URL}/api/user/reservation/${userEmail}`);
       const data = await response.json();
       if (response.ok && data.reservations) {
         setReservations(data.reservations);
@@ -45,7 +46,7 @@ const MyReservations = ({ userEmail }: { userEmail: string }) => {
         onPress: async () => {
           try {
             // Delete from database
-            const response = await fetch(`http://10.0.2.2:5000/api/user/delete-reservation/${id}`, {
+            const response = await fetch(`${BASE_URL}/api/user/delete-reservation/${id}`, {
               method: 'DELETE'
             });
             if(response.ok) {
@@ -66,7 +67,7 @@ const MyReservations = ({ userEmail }: { userEmail: string }) => {
     setPaymentLoadingId(id);
 
     try {
-      const response = await fetch('http://10.0.2.2:5000/api/payment/create-payment-intent', {
+      const response = await fetch(`${BASE_URL}/api/payment/create-payment-intent`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ amount: price, currency: 'usd' }),
@@ -102,7 +103,7 @@ const MyReservations = ({ userEmail }: { userEmail: string }) => {
         }
       } else {
         // 4. If payment is successful, update the reservation status to 'paid' in your DB
-        const updateResponse = await fetch(`http://10.0.2.2:5000/api/user/update-status/${id}`, {
+        const updateResponse = await fetch(`${BASE_URL}/api/user/update-status/${id}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ status: 'paid' })
