@@ -196,7 +196,7 @@ const MyReservations = ({ userEmail }: { userEmail: string }) => {
         receiptImage: depositFile ? `data:${depositFile.mimeType};base64,${depositFile.base64}` : null
       };
 
-      const res = await fetch(`${BASE_URL}/api/payment/bank-deposit`, {
+      const res = await fetch(`${BASE_URL}/api/bank-deposit`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
