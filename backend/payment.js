@@ -33,31 +33,4 @@ router.post('/create-payment-intent', async (req,res) => {
     }
 });
 
-router.post('/bank-deposit', async (req,res) => {
-    try {
-        const {
-            reservationId,
-            depositorName,
-            accountNumber,
-            reference,
-            depositDate,
-            depositTime,
-            packageName,
-            price,
-            receiptImage
-        } = req.body;
-
-        if (!reservationId || !depositorName || !accountNumber || !reference) {
-            return res.status(400).json({ error: 'Please fill in all required fields.' });
-        }res.status(200).json({
-            message: 'Bank deposit submitted successfully.',
-            reservationId: reservationId,
-            status: 'deposit_pending'
-        });
-
-    } catch (error) {
-        console.error('Error processing bank deposit:', error);
-        res.status(500).json({ error: 'Failed to process bank deposit.' });
-    }
-});
 module.exports = router; 
