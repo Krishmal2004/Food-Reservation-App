@@ -35,8 +35,8 @@ app.use('/api/user', reservation);
 app.use('/api/resturant', tablePackageRouter);
 app.use('/api/resturant', functionHallRouter);
 app.use('/api/user', eventBookingRouter);
-app.use('/api/payment', paymentRouter);
 app.use('/api/bank-deposit', bankDepositRouter);
+app.use('/api/payment', paymentRouter);
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
