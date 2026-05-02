@@ -152,7 +152,8 @@ const MyReservations = ({ userEmail }: { userEmail: string }) => {
 
   const handlePickFile = () => {
     launchImageLibrary(
-      { mediaType: 'photo', quality: 0.8, includeBase64: false },
+      // includeBase64: true is required since we are sending JSON instead of FormData
+      { mediaType: 'photo', quality: 0.5, includeBase64: true },
       (response) => {
         if (response.didCancel) return;
         if (response.errorCode) {
@@ -166,6 +167,7 @@ const MyReservations = ({ userEmail }: { userEmail: string }) => {
             uri: asset.uri,
             name: fileName,
             mimeType: asset.type || 'image/jpeg',
+            base64: asset.base64 // Save the base64 string
           });
         }
       }
@@ -180,33 +182,36 @@ const MyReservations = ({ userEmail }: { userEmail: string }) => {
     if (!selectedReservation) return;
     setIsBankSubmitting(true);
     try {
-      const formData = new FormData();
-      formData.append('reservationId', selectedReservation.id);
-      formData.append('depositorName', bankDepositorName);
-      formData.append('accountNumber', bankAccountNumber);
-      formData.append('reference', bankReference);
-      formData.append('depositDate', depositDate);
-      formData.append('depositTime', depositTime);
-      formData.append('packageName', selectedReservation.packageName || 'Standard Booking');
-      formData.append('price', String(selectedReservation.price));
-      if (depositFile) {
-        formData.append('receipt', {
-          uri: depositFile.uri,
-          name: depositFile.name,
-          type: depositFile.mimeType || 'application/octet-stream',
-        } as any);
-      }
+      // Build standard JSON payload instead of FormData
+      const payload = {
+        reservationId: selectedReservation.id,
+        depositorName: bankDepositorName,
+        accountNumber: bankAccountNumber,
+        reference: bankReference,
+        depositDate: depositDate,
+        depositTime: depositTime,
+        packageName: selectedReservation.packageName || 'Standard Booking',
+        price: String(selectedReservation.price),
+        // Format the base64 string properly for the backend
+        receiptImage: depositFile ? `data:${depositFile.mimeType};base64,${depositFile.base64}` : null
+      };
+
       const res = await fetch(`${BASE_URL}/api/payment/bank-deposit`, {
         method: 'POST',
-        body: formData,
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(payload),
       });
+
       if (res.ok) {
         // Remove from list after deposit submission
         setReservations(prev => prev.filter(r => r.id !== selectedReservation.id));
         setShowBankModal(false);
         Alert.alert('Submitted ✅', 'Your bank deposit has been submitted for verification. We will confirm shortly.');
       } else {
-        Alert.alert('Error', 'Failed to submit deposit. Please try again.');
+        const errorData = await res.json().catch(() => ({}));
+        Alert.alert('Error', errorData.error || 'Failed to submit deposit. Please try again.');
       }
     } catch {
       Alert.alert('Network Error', 'Could not connect to the server.');
