@@ -16,7 +16,7 @@ const paymentRouter = require('./payment');
 
 const app = express();
 
-app.use(express.json());
+//app.use(express.json());
 app.use(cors({origin: process.env.CROS_ORIGIN || 'http://localhost:3000'}));
 
 //connect to MongoDB
