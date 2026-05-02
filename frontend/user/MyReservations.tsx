@@ -66,7 +66,7 @@ const MyReservations = ({ userEmail }: { userEmail: string }) => {
           try {
             const res = await fetch(`${BASE_URL}/api/user/delete-reservation/${id}`, { method: 'DELETE' });
             if (res.ok) {
-              setReservations(prev => prev.filter(r => r.id !== id));
+              setReservations(prev => prev.filter(r => (r.id || r._id) !== id));
               Alert.alert('Cancelled', 'Reservation cancelled successfully.');
             } else {
               Alert.alert('Error', 'Failed to cancel reservation.');
@@ -79,7 +79,6 @@ const MyReservations = ({ userEmail }: { userEmail: string }) => {
     ]);
   };
 
-
   const openPaymentModal = (item: any) => {
     setSelectedReservation(item);
     setShowPaymentModal(true);
@@ -88,9 +87,12 @@ const MyReservations = ({ userEmail }: { userEmail: string }) => {
   const handleCardPayment = async () => {
     if (!selectedReservation) return;
     setShowPaymentModal(false);
-    const id = selectedReservation.id;
+    
+    // Fallback to _id if id is undefined
+    const id = selectedReservation.id || selectedReservation._id; 
     const price = selectedReservation.price;
     setPaymentLoadingId(id);
+    
     try {
       const response = await fetch(`${BASE_URL}/api/payment/create-payment-intent`, {
         method: 'POST',
@@ -124,7 +126,7 @@ const MyReservations = ({ userEmail }: { userEmail: string }) => {
         });
         if (updateRes.ok) {
           // Remove from list once paid
-          setReservations(prev => prev.filter(r => r.id !== id));
+          setReservations(prev => prev.filter(r => (r.id || r._id) !== id));
           Alert.alert('Payment Successful', 'Your reservation is confirmed and paid! 🎉');
         } else {
           Alert.alert('Warning', 'Payment succeeded but status update failed. Contact support.');
@@ -152,8 +154,8 @@ const MyReservations = ({ userEmail }: { userEmail: string }) => {
 
   const handlePickFile = () => {
     launchImageLibrary(
-      // includeBase64: true is required since we are sending JSON instead of FormData
-      { mediaType: 'photo', quality: 0.5, includeBase64: true },
+      // Reduced quality to 0.2 to prevent the Base64 string from getting too massive
+      { mediaType: 'photo', quality: 0.2, includeBase64: true },
       (response) => {
         if (response.didCancel) return;
         if (response.errorCode) {
@@ -180,11 +182,18 @@ const MyReservations = ({ userEmail }: { userEmail: string }) => {
       return;
     }
     if (!selectedReservation) return;
+    
+    // Safely get the ID
+    const resId = selectedReservation.id || selectedReservation._id;
+    if (!resId) {
+       Alert.alert('Error', 'Invalid reservation ID.');
+       return;
+    }
+
     setIsBankSubmitting(true);
     try {
-      // Build standard JSON payload instead of FormData
       const payload = {
-        reservationId: selectedReservation.id,
+        reservationId: resId,
         depositorName: bankDepositorName,
         accountNumber: bankAccountNumber,
         reference: bankReference,
@@ -192,7 +201,6 @@ const MyReservations = ({ userEmail }: { userEmail: string }) => {
         depositTime: depositTime,
         packageName: selectedReservation.packageName || 'Standard Booking',
         price: String(selectedReservation.price),
-        // Format the base64 string properly for the backend
         receiptImage: depositFile ? `data:${depositFile.mimeType};base64,${depositFile.base64}` : null
       };
 
@@ -204,17 +212,17 @@ const MyReservations = ({ userEmail }: { userEmail: string }) => {
         body: JSON.stringify(payload),
       });
 
-      console.log('Status Code: ',res.status);
-      const responseText = await res.text();
-      console.log('Response Text: ', responseText);
-
+      console.log('Status Code: ', res.status);
+      
       if (res.ok) {
-        setReservations(prev => prev.filter(r => r.id !== selectedReservation.id));
+        // Change the status locally instead of deleting it, so the user sees "DEPOSIT PENDING"
+        setReservations(prev => 
+          prev.map(r => (r.id || r._id) === resId ? { ...r, status: 'deposit_pending' } : r)
+        );
         setShowBankModal(false);
         Alert.alert('Submitted ✅', 'Your bank deposit has been submitted for verification. We will confirm shortly.');
       } else {
         const errorData = await res.json().catch(() => ({}));
-        console.log('Error Data: ', errorData);
         Alert.alert('Error', errorData.error || 'Failed to submit deposit. Please try again.');
       }
     } catch {
@@ -236,10 +244,13 @@ const MyReservations = ({ userEmail }: { userEmail: string }) => {
         <ActivityIndicator size="large" color="#FF5A5F" style={{ marginTop: 20 }} />
       ) : reservations.length > 0 ? (
         reservations.map((item) => {
+          // Safely get ID for keys
+          const itemId = item.id || item._id;
           const currentStatus = item.status?.toLowerCase() || 'pending';
-          const isPayingThisItem = paymentLoadingId === item.id;
+          const isPayingThisItem = paymentLoadingId === itemId;
+          
           return (
-            <View key={item.id} style={styles.card}>
+            <View key={itemId} style={styles.card}>
               <View style={styles.cardHeader}>
                 <Text style={styles.restaurantName}>{item.restaurantName || 'Restaurant'}</Text>
                 <Text style={styles.price}>${item.price}</Text>
@@ -266,7 +277,7 @@ const MyReservations = ({ userEmail }: { userEmail: string }) => {
                 <View style={styles.actionRow}>
                   <TouchableOpacity
                     style={[styles.btn, styles.deleteBtn]}
-                    onPress={() => handleDelete(item.id, item.restaurantName)}
+                    onPress={() => handleDelete(itemId, item.restaurantName)}
                     disabled={isPayingThisItem}
                     activeOpacity={0.7}
                   >
