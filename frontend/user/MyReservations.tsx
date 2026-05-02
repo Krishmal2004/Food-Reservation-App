@@ -1,3 +1,4 @@
+// MyReservations.tsx
 import React, { useState, useCallback } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity, ActivityIndicator,
@@ -13,11 +14,9 @@ const MyReservations = ({ userEmail }: { userEmail: string }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [paymentLoadingId, setPaymentLoadingId] = useState<string | null>(null);
 
-  // Payment Method Modal
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [selectedReservation, setSelectedReservation] = useState<any>(null);
 
-  // Bank Deposit Modal
   const [showBankModal, setShowBankModal] = useState(false);
   const [bankDepositorName, setBankDepositorName] = useState('');
   const [bankAccountNumber, setBankAccountNumber] = useState('');
@@ -88,7 +87,6 @@ const MyReservations = ({ userEmail }: { userEmail: string }) => {
     if (!selectedReservation) return;
     setShowPaymentModal(false);
     
-    // Fallback to _id if id is undefined
     const id = selectedReservation.id || selectedReservation._id; 
     const price = selectedReservation.price;
     setPaymentLoadingId(id);
@@ -125,7 +123,6 @@ const MyReservations = ({ userEmail }: { userEmail: string }) => {
           body: JSON.stringify({ status: 'paid' })
         });
         if (updateRes.ok) {
-          // Remove from list once paid
           setReservations(prev => prev.filter(r => (r.id || r._id) !== id));
           Alert.alert('Payment Successful', 'Your reservation is confirmed and paid! 🎉');
         } else {
@@ -154,7 +151,6 @@ const MyReservations = ({ userEmail }: { userEmail: string }) => {
 
   const handlePickFile = () => {
     launchImageLibrary(
-      // Reduced quality to 0.2 to prevent the Base64 string from getting too massive
       { mediaType: 'photo', quality: 0.2, includeBase64: true },
       (response) => {
         if (response.didCancel) return;
@@ -169,7 +165,7 @@ const MyReservations = ({ userEmail }: { userEmail: string }) => {
             uri: asset.uri,
             name: fileName,
             mimeType: asset.type || 'image/jpeg',
-            base64: asset.base64 // Save the base64 string
+            base64: asset.base64
           });
         }
       }
@@ -183,7 +179,6 @@ const MyReservations = ({ userEmail }: { userEmail: string }) => {
     }
     if (!selectedReservation) return;
     
-    // Safely get the ID
     const resId = selectedReservation.id || selectedReservation._id;
     if (!resId) {
        Alert.alert('Error', 'Invalid reservation ID.');
@@ -192,8 +187,12 @@ const MyReservations = ({ userEmail }: { userEmail: string }) => {
 
     setIsBankSubmitting(true);
     try {
+      // INCLUDE THE NEW IDs IN THE PAYLOAD
       const payload = {
         reservationId: resId,
+        userId: userEmail, // Assuming userEmail acts as the User ID
+        restaurantId: selectedReservation.restaurantId,
+        packageId: selectedReservation.packageId,
         depositorName: bankDepositorName,
         accountNumber: bankAccountNumber,
         reference: bankReference,
@@ -212,10 +211,8 @@ const MyReservations = ({ userEmail }: { userEmail: string }) => {
         body: JSON.stringify(payload),
       });
 
-      console.log('Status Code: ', res.status);
-      
       if (res.ok) {
-        // Change the status locally instead of deleting it, so the user sees "DEPOSIT PENDING"
+        // Update the status on the UI instantly so the user sees "DEPOSIT PENDING"
         setReservations(prev => 
           prev.map(r => (r.id || r._id) === resId ? { ...r, status: 'deposit_pending' } : r)
         );
@@ -244,7 +241,6 @@ const MyReservations = ({ userEmail }: { userEmail: string }) => {
         <ActivityIndicator size="large" color="#FF5A5F" style={{ marginTop: 20 }} />
       ) : reservations.length > 0 ? (
         reservations.map((item) => {
-          // Safely get ID for keys
           const itemId = item.id || item._id;
           const currentStatus = item.status?.toLowerCase() || 'pending';
           const isPayingThisItem = paymentLoadingId === itemId;
@@ -494,7 +490,6 @@ const styles = StyleSheet.create({
   emptyContainer: { padding: 30, alignItems: 'center', backgroundColor: '#FFFFFF', borderRadius: 16, borderWidth: 1, borderColor: '#EAECEE', borderStyle: 'dashed' },
   emptyText: { color: '#AAB7B8', fontSize: 16, fontWeight: '600' },
 
-  // Modal
   overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.55)', justifyContent: 'flex-end' },
   paymentSheet: { backgroundColor: '#FFFFFF', borderTopLeftRadius: 28, borderTopRightRadius: 28, padding: 24, paddingBottom: 36 },
   bankSheet: { backgroundColor: '#FFFFFF', borderTopLeftRadius: 28, borderTopRightRadius: 28, padding: 24, paddingBottom: 36, maxHeight: '92%' },
@@ -519,7 +514,6 @@ const styles = StyleSheet.create({
   cancelMethodBtn: { marginTop: 8, paddingVertical: 14, alignItems: 'center', backgroundColor: '#F2F4F4', borderRadius: 14 },
   cancelMethodText: { fontSize: 15, fontWeight: '700', color: '#E74C3C' },
 
-  // Bank Deposit Form
   autofillBox: { backgroundColor: '#F0FAF4', borderRadius: 14, padding: 16, marginBottom: 20, borderWidth: 1, borderColor: '#D5F0E0' },
   autofillTitle: { fontSize: 14, fontWeight: '800', color: '#27AE60', marginBottom: 12 },
   autofillRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 },
