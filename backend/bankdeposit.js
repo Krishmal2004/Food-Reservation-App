@@ -33,22 +33,40 @@ router.post('/', async (req, res) => {
             receiptImage
         } = req.body;
 
-            if (!reservationId || !depositorName || !accountNumber || !reference) {
+        if (!reservationId || !depositorName || !accountNumber || !reference) {
             return res.status(400).json({ error: 'Please fill in all required fields.' });
         }
 
+        // 1. Save the new deposit record
         const newDeposit = new BankDeposit({
-            reservationId: reservationId,
-            depositorName: depositorName,
-            accountNumber: accountNumber,
-            reference: reference,
-            depositDate: depositDate,
-            depositTime: depositTime,
-            packageName: packageName,
-            price: price,
+            reservationId,
+            depositorName,
+            accountNumber,
+            reference,
+            depositDate,
+            depositTime,
+            packageName,
+            price,
             receiptImage
         });
         await newDeposit.save();
+
+        // 2. Update the actual Reservation's status in the database
+        // We use mongoose.connection.collection to update it directly, 
+        // assuming your reservations collection is named 'reservations'.
+        try {
+            await mongoose.connection.collection('reservations').updateOne(
+                { _id: new mongoose.Types.ObjectId(reservationId) },
+                { $set: { status: 'deposit_pending' } }
+            );
+        } catch (updateErr) {
+            console.error('Warning: Failed to update reservation status, but deposit was saved.', updateErr);
+            // If your ID isn't an ObjectId (e.g. standard string), fallback to a string query:
+            await mongoose.connection.collection('reservations').updateOne(
+                { id: reservationId },
+                { $set: { status: 'deposit_pending' } }
+            );
+        }
 
         res.status(200).json({
             message: 'Bank deposit submitted successfully.',
