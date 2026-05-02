@@ -38,14 +38,14 @@ router.post('/', async (req, res) => {
         }
 
         const newDeposit = new BankDeposit({
-            reservationId,
-            depositorName,
-            accountNumber,
-            reference,
-            depositDate,
-            depositTime,
-            packageName,
-            price,
+            reservationId: reservationId,
+            depositorName: depositorName,
+            accountNumber: accountNumber,
+            reference: reference,
+            depositDate: depositDate,
+            depositTime: depositTime,
+            packageName: packageName,
+            price: price,
             receiptImage
         });
         await newDeposit.save();
