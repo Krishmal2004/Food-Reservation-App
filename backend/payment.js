@@ -1,8 +1,13 @@
 const express = require('express');
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+const multer = require('multer'); 
+
 const router = express.Router();
 
-router.post('/create-payment-intent', async (req,res) => {
+const storage = multer.memoryStorage();
+const upload = multer({ storage: storage });
+
+router.post('/create-payment-intent', async (req, res) => {
     try {
         const {amount, currency} = req.body;
         
@@ -33,4 +38,38 @@ router.post('/create-payment-intent', async (req,res) => {
     }
 });
 
-module.exports = router; 
+router.post('/bank-deposit', upload.single('receipt'), async (req, res) => {
+    try {
+        const {
+            reservationId,
+            depositorName,
+            accountNumber,
+            reference,
+            depositDate,
+            depositTime,
+            packageName,
+            price
+        } = req.body;
+
+        const receiptFile = req.file;
+
+        // 1. Validate required fields
+        if (!reservationId || !depositorName || !accountNumber || !reference) {
+            return res.status(400).json({ error: 'Missing required bank deposit fields' });
+        }
+
+        res.status(200).json({
+            message: 'Bank deposit details submitted successfully.',
+            reservationId: reservationId,
+            status: 'deposit_pending'
+        });
+        
+    } catch (error) {
+        console.error('Error processing bank deposit:', error);
+        res.status(500).json({
+            error: error.message || 'Failed to process bank deposit.'
+        });
+    }
+});
+
+module.exports = router;
