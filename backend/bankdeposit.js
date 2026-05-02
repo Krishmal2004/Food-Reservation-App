@@ -1,10 +1,15 @@
+// bankdeposit.js
 const express = require('express');
 const mongoose = require('mongoose');
 
 const router = express.Router();
 
+// 1. Add the new fields to your schema
 const bankDepositSchema = new mongoose.Schema({
     reservationId: { type: String, required: true },
+    userId: { type: String },           // Added
+    restaurantId: { type: String },     // Added
+    packageId: { type: String },        // Added
     depositorName: { type: String, required: true },
     accountNumber: { type: String, required: true },
     reference: { type: String, required: true },
@@ -21,8 +26,12 @@ const BankDeposit = mongoose.model('BankDeposit', bankDepositSchema);
 
 router.post('/', async (req, res) => {
     try {
+        // 2. Destructure the new fields from the request body
         const {
             reservationId,
+            userId,
+            restaurantId,
+            packageId,
             depositorName,
             accountNumber,
             reference,
@@ -37,9 +46,12 @@ router.post('/', async (req, res) => {
             return res.status(400).json({ error: 'Please fill in all required fields.' });
         }
 
-        // 1. Save the new deposit record
+        // 3. Save the new deposit record with the extra IDs
         const newDeposit = new BankDeposit({
             reservationId,
+            userId,
+            restaurantId,
+            packageId,
             depositorName,
             accountNumber,
             reference,
@@ -51,17 +63,14 @@ router.post('/', async (req, res) => {
         });
         await newDeposit.save();
 
-        // 2. Update the actual Reservation's status in the database
-        // We use mongoose.connection.collection to update it directly, 
-        // assuming your reservations collection is named 'reservations'.
+        // 4. Update the actual Reservation's status in the database
         try {
             await mongoose.connection.collection('reservations').updateOne(
                 { _id: new mongoose.Types.ObjectId(reservationId) },
                 { $set: { status: 'deposit_pending' } }
             );
         } catch (updateErr) {
-            console.error('Warning: Failed to update reservation status, but deposit was saved.', updateErr);
-            // If your ID isn't an ObjectId (e.g. standard string), fallback to a string query:
+            // Fallback for standard string IDs if ObjectId fails
             await mongoose.connection.collection('reservations').updateOne(
                 { id: reservationId },
                 { $set: { status: 'deposit_pending' } }
