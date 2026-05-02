@@ -19,7 +19,6 @@ const app = express();
 
 app.use(cors({origin: process.env.CROS_ORIGIN || 'http://localhost:3000'}));
 
-// 1. MUST GO BEFORE ROUTES: Add the payload limits for handling large images and JSON parsing
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
@@ -28,7 +27,6 @@ mongoose.connect(process.env.MONGO_URI)
     .then(() => console.log('MongoDB connected'))
     .catch((err) => console.error('MongoDB connection error:', err));
 
-// 3. ROUTES GO HERE (After express.json)
 app.use('/api/auth', userLoginRouter);
 app.use('/api/auth', resturantLoginRouter);
 app.use('/api/resturant', foodPackageRouter);

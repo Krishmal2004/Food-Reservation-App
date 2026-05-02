@@ -204,13 +204,17 @@ const MyReservations = ({ userEmail }: { userEmail: string }) => {
         body: JSON.stringify(payload),
       });
 
+      console.log('Status Code: ',res.status);
+      const responseText = await res.text();
+      console.log('Response Text: ', responseText);
+
       if (res.ok) {
-        // Remove from list after deposit submission
         setReservations(prev => prev.filter(r => r.id !== selectedReservation.id));
         setShowBankModal(false);
         Alert.alert('Submitted ✅', 'Your bank deposit has been submitted for verification. We will confirm shortly.');
       } else {
         const errorData = await res.json().catch(() => ({}));
+        console.log('Error Data: ', errorData);
         Alert.alert('Error', errorData.error || 'Failed to submit deposit. Please try again.');
       }
     } catch {
