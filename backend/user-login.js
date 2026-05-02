@@ -67,13 +67,12 @@ router.post('/register', async (req, res)=> {
 //User Login
 router.post('/login', async (req, res) => {
     try {
-        
+        const {email, password} = req.body;
         if(!req.body) {
             return res.status(400).json({
                 message: 'Request body is missing. Ensure content type is application/json'
             });
         }
-        const {email,password} =req.body;
         if(!email || !password) {
             return res.status(400).json({message: 'Email and password are required'});
         }
