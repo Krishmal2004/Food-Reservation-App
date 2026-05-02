@@ -36,12 +36,20 @@ const LoginScreen = ({ navigation }: { navigation: any }) => {
         },
         body: JSON.stringify({ email, password })
       });
-      const data = await response.json();
-      if(response.ok) {
-        Alert.alert('Success', 'Logged in successfully!');
-        navigation.navigate('UserDashboard',{currentEmail: email});
+      const contentType = response.headers.get("content-type");
+      if (contentType && contentType.indexOf("application/json") !== -1) {
+          const data = await response.json();
+          if(response.ok) {
+            Alert.alert('Success', 'Logged in successfully!');
+            navigation.navigate('UserDashboard',{currentEmail: email});
+          } else {
+            Alert.alert('Login Failed', data.message || 'Invalid email or password');
+          }
       } else {
-        Alert.alert('Login Failed', data.message || 'Invalid email or password');
+          // It's not JSON (probably Azure's HTML error page)
+          const text = await response.text();
+          console.error("Received non-JSON response:", text.substring(0, 100)); // Log the first 100 chars
+          Alert.alert('Server Error', 'The server returned an unexpected response. Is it running?');
       }
     } catch (error) {
       console.error('Error logging in user:', error);
