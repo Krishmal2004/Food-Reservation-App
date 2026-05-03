@@ -17,6 +17,7 @@ import {
 } from 'react-native';
 import { launchImageLibrary, ImageLibraryOptions } from 'react-native-image-picker';
 import { BASE_URL } from '../api';
+import ReviewSection from './review';
 
 const RestaurantDetails = ({ route, navigation }: any) => {
   const { restaurant, userEmail } = route?.params || {};
@@ -257,6 +258,9 @@ const RestaurantDetails = ({ route, navigation }: any) => {
             </Text>
           )}
         </View>
+
+        {/* Customer Reviews */}
+        <ReviewSection restaurantId={restaurant.id} />
 
       </ScrollView>
 

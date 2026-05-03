@@ -21,20 +21,27 @@ const restuarantSchema = new mongoose.Schema({
         type: String,
         required: true,
     },
+    approvalFormImage: {
+        type: String,
+        required: true, // Added to match frontend requirement
+    }
 },{timestamps: true});
+
 const resturant = mongoose.model('Resturant_login', restuarantSchema);
 
 //Resturant Registration
 router.post('/register-restaurant', async (req,res)=>{
     try {
-        const {restaurantName,email,password} = req.body;
-        if(!restaurantName || !email || !password) {
+        const {restaurantName, email, password, approvalFormImage} = req.body;
+        
+        if(!restaurantName || !email || !password || !approvalFormImage) {
             return res.status(400).json({message: 'All fields are required'});
         }
         const existingResturant = await resturant.findOne({email});
         if(existingResturant) {
             return res.status(400).json({message: 'Resturant already exists'});
         }
+        
         //Password Hashing
         const salt = await bcrypt.genSalt(10);
         const hashedPassword = await bcrypt.hash(password, salt);
@@ -43,7 +50,9 @@ router.post('/register-restaurant', async (req,res)=>{
             restaurantName,
             email,
             password: hashedPassword,
+            approvalFormImage,
         });
+        
         await newResturant.save();
         res.status(201).json({
             message: 'Resturant registered successfully',
@@ -51,7 +60,6 @@ router.post('/register-restaurant', async (req,res)=>{
                 id: newResturant._id,
                 restaurantName: newResturant.restaurantName,
                 email: newResturant.email,
-                password: newResturant.password,
             }
         });
     } catch (error) {
@@ -123,6 +131,37 @@ router.put('/update-resturant-profile/:id', async (req, res) => {
         res.status(500).json({ message: 'Server error' });
     }
 });
+
+//Delete resturant account
+router.delete('/delete-restaurant/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { password } = req.body;
+
+        if (!password) {
+            return res.status(400).json({ message: 'Password is required to confirm deletion' });
+        }
+
+        const existingResturant = await resturant.findById(id);
+        if (!existingResturant) {
+            return res.status(404).json({ message: 'Restaurant not found' });
+        }
+
+        // Verify password before allowing deletion
+        const isMatch = await bcrypt.compare(password, existingResturant.password);
+        if (!isMatch) {
+            return res.status(400).json({ message: 'Invalid password' });
+        }
+
+        await resturant.findByIdAndDelete(id);
+
+        res.status(200).json({ message: 'Restaurant account deleted successfully' });
+    } catch (error) {
+        console.error('Error deleting restaurant account:', error);
+        res.status(500).json({ message: 'Server error' });
+    }
+});
+
 //Get the All resturant 
 router.get('/all-resturants', async (req,res) =>{
     try {
@@ -133,4 +172,5 @@ router.get('/all-resturants', async (req,res) =>{
         res.status(500).json({ message: 'Server error' });
     }
 });
+
 module.exports = router;
