@@ -32,10 +32,8 @@ const resturant = mongoose.model('Resturant_login', restuarantSchema);
 //Resturant Registration
 router.post('/register-restaurant', async (req,res)=>{
     try {
-        // Extract approvalFormImage from request body
         const {restaurantName, email, password, approvalFormImage} = req.body;
         
-        // Ensure all required fields are present
         if(!restaurantName || !email || !password || !approvalFormImage) {
             return res.status(400).json({message: 'All fields are required'});
         }
@@ -48,7 +46,6 @@ router.post('/register-restaurant', async (req,res)=>{
         const salt = await bcrypt.genSalt(10);
         const hashedPassword = await bcrypt.hash(password, salt);
 
-        // Include approvalFormImage in the new restaurant document
         const newResturant = new resturant({
             restaurantName,
             email,
@@ -63,7 +60,6 @@ router.post('/register-restaurant', async (req,res)=>{
                 id: newResturant._id,
                 restaurantName: newResturant.restaurantName,
                 email: newResturant.email,
-                // Do not send password or heavy base64 image back in response
             }
         });
     } catch (error) {
@@ -132,6 +128,36 @@ router.put('/update-resturant-profile/:id', async (req, res) => {
         });
     } catch (error) {
         console.error('Error updating restaurant profile:', error);
+        res.status(500).json({ message: 'Server error' });
+    }
+});
+
+//Delete resturant account
+router.delete('/delete-restaurant/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { password } = req.body;
+
+        if (!password) {
+            return res.status(400).json({ message: 'Password is required to confirm deletion' });
+        }
+
+        const existingResturant = await resturant.findById(id);
+        if (!existingResturant) {
+            return res.status(404).json({ message: 'Restaurant not found' });
+        }
+
+        // Verify password before allowing deletion
+        const isMatch = await bcrypt.compare(password, existingResturant.password);
+        if (!isMatch) {
+            return res.status(400).json({ message: 'Invalid password' });
+        }
+
+        await resturant.findByIdAndDelete(id);
+
+        res.status(200).json({ message: 'Restaurant account deleted successfully' });
+    } catch (error) {
+        console.error('Error deleting restaurant account:', error);
         res.status(500).json({ message: 'Server error' });
     }
 });
