@@ -3,7 +3,7 @@ import { StyleSheet, View, Text, ActivityIndicator, ScrollView, Image } from 're
 import { useFocusEffect } from '@react-navigation/native';
 import { BASE_URL } from '../api';
 
-const customerFeedbacks = ({ loggedInRestaurantId }: { loggedInRestaurantId?: string }) => {
+const CustomerFeedbacks = ({ loggedInRestaurantId }: { loggedInRestaurantId?: string }) => {
   const [feedbacks, setFeedbacks] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -96,4 +96,4 @@ const styles = StyleSheet.create({
   feedbackImage: { width: 70, height: 70, borderRadius: 8, marginRight: 8, backgroundColor: '#F0F0F0' }
 });
 
-export default customerFeedbacks;
+export default CustomerFeedbacks;
