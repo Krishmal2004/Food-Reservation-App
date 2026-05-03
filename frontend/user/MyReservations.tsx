@@ -187,10 +187,9 @@ const MyReservations = ({ userEmail }: { userEmail: string }) => {
 
     setIsBankSubmitting(true);
     try {
-      // INCLUDE THE NEW IDs IN THE PAYLOAD
       const payload = {
         reservationId: resId,
-        userId: userEmail, // Assuming userEmail acts as the User ID
+        userId: userEmail,
         restaurantId: selectedReservation.restaurantId,
         packageId: selectedReservation.packageId,
         depositorName: bankDepositorName,
@@ -212,7 +211,6 @@ const MyReservations = ({ userEmail }: { userEmail: string }) => {
       });
 
       if (res.ok) {
-        // Update the status on the UI instantly so the user sees "DEPOSIT PENDING"
         setReservations(prev => 
           prev.map(r => (r.id || r._id) === resId ? { ...r, status: 'deposit_pending' } : r)
         );
@@ -265,11 +263,24 @@ const MyReservations = ({ userEmail }: { userEmail: string }) => {
                     Status: {currentStatus === 'deposit_pending' ? 'DEPOSIT PENDING' : currentStatus.toUpperCase()}
                   </Text>
                 </View>
+                
+                {/* STATUS MESSAGES */}
                 {currentStatus === 'pending' && (
                   <Text style={styles.pendingHint}>Awaiting restaurant confirmation before payment.</Text>
                 )}
+                {currentStatus === 'deposit_pending' && (
+                  <Text style={[styles.pendingHint, { color: '#8E44AD' }]}>Bank deposit submitted. Awaiting verification.</Text>
+                )}
+                {currentStatus === 'confirmed' && (
+                  <Text style={[styles.pendingHint, { color: '#2980B9' }]}>Reservation confirmed! Awaiting payment.</Text>
+                )}
+                {currentStatus === 'paid' && (
+                  <Text style={[styles.pendingHint, { color: '#27AE60' }]}>Payment verified and reservation confirmed! ✅</Text>
+                )}
               </View>
-              {currentStatus === 'confirmed' && (
+              
+              {/* ACTION BUTTONS: SHOW CANCEL IF PENDING, SHOW PAY+CANCEL IF CONFIRMED */}
+              {(currentStatus === 'pending' || currentStatus === 'confirmed') && (
                 <View style={styles.actionRow}>
                   <TouchableOpacity
                     style={[styles.btn, styles.deleteBtn]}
@@ -279,17 +290,21 @@ const MyReservations = ({ userEmail }: { userEmail: string }) => {
                   >
                     <Text style={styles.deleteBtnText}>Cancel</Text>
                   </TouchableOpacity>
-                  <TouchableOpacity
-                    style={[styles.btn, styles.payBtn, isPayingThisItem && styles.payBtnDisabled]}
-                    onPress={() => openPaymentModal(item)}
-                    disabled={isPayingThisItem}
-                    activeOpacity={0.7}
-                  >
-                    {isPayingThisItem
-                      ? <ActivityIndicator size="small" color="#FFFFFF" />
-                      : <Text style={styles.payBtnText}>💳 Pay Now</Text>
-                    }
-                  </TouchableOpacity>
+                  
+                  {/* ONLY SHOW PAY NOW WHEN CONFIRMED */}
+                  {currentStatus === 'confirmed' && (
+                    <TouchableOpacity
+                      style={[styles.btn, styles.payBtn, isPayingThisItem && styles.payBtnDisabled]}
+                      onPress={() => openPaymentModal(item)}
+                      disabled={isPayingThisItem}
+                      activeOpacity={0.7}
+                    >
+                      {isPayingThisItem
+                        ? <ActivityIndicator size="small" color="#FFFFFF" />
+                        : <Text style={styles.payBtnText}>💳 Pay Now</Text>
+                      }
+                    </TouchableOpacity>
+                  )}
                 </View>
               )}
             </View>
@@ -479,7 +494,7 @@ const styles = StyleSheet.create({
   detailText: { fontSize: 15, color: '#666666', fontWeight: '600' },
   statusBadge: { marginTop: 4, backgroundColor: '#F8F9F9', alignSelf: 'flex-start', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 6 },
   statusText: { fontSize: 13, fontWeight: '800' },
-  pendingHint: { fontSize: 12, color: '#A0A0A0', fontStyle: 'italic', marginTop: 4 },
+  pendingHint: { fontSize: 13, color: '#A0A0A0', fontStyle: 'italic', marginTop: 8 },
   actionRow: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 20, gap: 12 },
   btn: { flex: 1, paddingVertical: 14, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
   deleteBtn: { backgroundColor: '#FFF0F0', borderWidth: 1, borderColor: '#FFE0E0' },
