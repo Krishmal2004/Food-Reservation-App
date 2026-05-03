@@ -9,8 +9,12 @@ import {
   KeyboardAvoidingView, 
   Platform,
   ActivityIndicator,
-  Alert
+  Alert,
+  Image,
+  ScrollView,
+  FlatList
 } from 'react-native';
+import { launchImageLibrary, ImageLibraryOptions } from 'react-native-image-picker';
 import { useFocusEffect } from '@react-navigation/native';
 import { BASE_URL } from '../api';
 
@@ -27,6 +31,8 @@ const UserFeedbacks = ({ userEmail }: { userEmail?: string }) => {
   // Edit State
   const [editRating, setEditRating] = useState(5);
   const [editText, setEditText] = useState('');
+  const [editImages, setEditImages] = useState<string[]>([]);  // base64 uri array
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
 
   // Fetch feedbacks from DB
   const fetchFeedbacks = async () => {
@@ -66,8 +72,42 @@ const UserFeedbacks = ({ userEmail }: { userEmail?: string }) => {
     if (type === 'edit') {
       setEditRating(feedback.rating);
       setEditText(feedback.text);
+      setEditImages(feedback.images || []);
     }
     setModalVisible(true);
+  };
+
+  // Image picker handler
+  const pickImages = () => {
+    if (editImages.length >= 3) {
+      Alert.alert('Limit Reached', 'You can upload a maximum of 3 images.');
+      return;
+    }
+    const options: ImageLibraryOptions = {
+      mediaType: 'photo',
+      selectionLimit: 3 - editImages.length,
+      quality: 0.7,
+      includeBase64: true,
+    };
+    setIsUploadingImage(true);
+    launchImageLibrary(options, (response) => {
+      setIsUploadingImage(false);
+      if (response.didCancel) return;
+      if (response.errorCode) {
+        Alert.alert('Error', response.errorMessage || 'Could not open image library.');
+        return;
+      }
+      if (response.assets) {
+        const newUris = response.assets
+          .filter(a => a.base64)
+          .map(a => `data:image/jpeg;base64,${a.base64}`);
+        setEditImages(prev => [...prev, ...newUris].slice(0, 3));
+      }
+    });
+  };
+
+  const removeImage = (index: number) => {
+    setEditImages(prev => prev.filter((_, i) => i !== index));
   };
 
   const closeModal = () => {
@@ -111,6 +151,7 @@ const UserFeedbacks = ({ userEmail }: { userEmail?: string }) => {
         body: JSON.stringify({
           rating: editRating,
           text: editText,
+          images: editImages,
         }),
       });
       const data = await response.json();
@@ -120,7 +161,8 @@ const UserFeedbacks = ({ userEmail }: { userEmail?: string }) => {
           ? {
             ...fb,
             text: editText,
-            rating: editRating
+            rating: editRating,
+            images: editImages,
           }
           : fb
         ));
@@ -195,6 +237,16 @@ const UserFeedbacks = ({ userEmail }: { userEmail?: string }) => {
                 <View style={styles.modalBody}>
                   <Text style={styles.modalBodyText}>"{selectedFeedback.text}"</Text>
                 </View>
+                {selectedFeedback.images && selectedFeedback.images.length > 0 && (
+                  <View style={styles.imageSection}>
+                    <Text style={styles.inputLabel}>Attached Photos</Text>
+                    <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.imageScrollRow}>
+                      {selectedFeedback.images.map((uri: string, idx: number) => (
+                        <Image key={idx} source={{ uri }} style={styles.viewImage} />
+                      ))}
+                    </ScrollView>
+                  </View>
+                )}
                 <TouchableOpacity style={[styles.modalButton, styles.primaryButton]} onPress={closeModal}>
                   <Text style={styles.primaryButtonText}>Close</Text>
                 </TouchableOpacity>
@@ -219,6 +271,38 @@ const UserFeedbacks = ({ userEmail }: { userEmail?: string }) => {
                 <View style={styles.inputGroup}>
                   <Text style={styles.inputLabel}>Review</Text>
                   <TextInput style={[styles.input, styles.textArea]} value={editText} onChangeText={setEditText} multiline numberOfLines={4} textAlignVertical="top" />
+                </View>
+
+                {/* Image Upload Section */}
+                <View style={styles.inputGroup}>
+                  <Text style={styles.inputLabel}>Photos ({editImages.length}/3)</Text>
+                  <View style={styles.imageUploadRow}>
+                    {editImages.map((uri, idx) => (
+                      <View key={idx} style={styles.imageThumbWrapper}>
+                        <Image source={{ uri }} style={styles.imageThumb} />
+                        <TouchableOpacity style={styles.removeImageBtn} onPress={() => removeImage(idx)} activeOpacity={0.8}>
+                          <Text style={styles.removeImageBtnText}>✕</Text>
+                        </TouchableOpacity>
+                      </View>
+                    ))}
+                    {editImages.length < 3 && (
+                      <TouchableOpacity
+                        style={styles.addImageBtn}
+                        onPress={pickImages}
+                        activeOpacity={0.7}
+                        disabled={isUploadingImage}
+                      >
+                        {isUploadingImage ? (
+                          <ActivityIndicator size="small" color="#2980B9" />
+                        ) : (
+                          <>
+                            <Text style={styles.addImageIcon}>📷</Text>
+                            <Text style={styles.addImageText}>Add Photo</Text>
+                          </>
+                        )}
+                      </TouchableOpacity>
+                    )}
+                  </View>
                 </View>
                 <View style={styles.modalButtonRow}>
                   <TouchableOpacity style={[styles.modalButtonRowBtn, styles.cancelButton]} onPress={closeModal}>
@@ -314,6 +398,18 @@ const styles = StyleSheet.create({
   destructiveButtonText: { color: '#FFFFFF', fontSize: 16, fontWeight: '700' },
   deleteIconContainer: { alignItems: 'center', marginBottom: 16, backgroundColor: '#FDEDEC', width: 64, height: 64, borderRadius: 32, justifyContent: 'center', alignSelf: 'center' },
   deleteIconText: { fontSize: 30 },
+  // Image upload styles
+  imageSection: { marginBottom: 20 },
+  imageScrollRow: { flexDirection: 'row', marginTop: 8 },
+  viewImage: { width: 120, height: 100, borderRadius: 12, marginRight: 10 },
+  imageUploadRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginTop: 4 },
+  imageThumbWrapper: { position: 'relative', width: 80, height: 80 },
+  imageThumb: { width: 80, height: 80, borderRadius: 10, backgroundColor: '#F0F0F0' },
+  removeImageBtn: { position: 'absolute', top: -6, right: -6, backgroundColor: '#E74C3C', width: 22, height: 22, borderRadius: 11, alignItems: 'center', justifyContent: 'center', zIndex: 10 },
+  removeImageBtnText: { color: '#FFFFFF', fontSize: 11, fontWeight: '800' },
+  addImageBtn: { width: 80, height: 80, borderRadius: 10, borderWidth: 2, borderColor: '#2980B9', borderStyle: 'dashed', alignItems: 'center', justifyContent: 'center', backgroundColor: '#EBF5FB', gap: 4 },
+  addImageIcon: { fontSize: 22 },
+  addImageText: { fontSize: 10, fontWeight: '600', color: '#2980B9' },
 });
 
 export default UserFeedbacks;
