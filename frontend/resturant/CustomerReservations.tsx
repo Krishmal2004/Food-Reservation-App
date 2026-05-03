@@ -18,9 +18,7 @@ const CustomerReservations = ({ loggedInRestaurantId }: { loggedInRestaurantId?:
 
     setIsLoading(true);
     try {
-      const response = await fetch(
-        `${BASE_URL}/api/user/reservation/resturant/${loggedInRestaurantId}`
-      );
+      const response = await fetch(`${BASE_URL}/api/user/reservation/resturant/${loggedInRestaurantId}`);
       const data = await response.json();
 
       if (response.ok && data.reservations) {
@@ -49,7 +47,6 @@ const CustomerReservations = ({ loggedInRestaurantId }: { loggedInRestaurantId?:
 
   const handleUpdateResStatus = async (newStatus: string) => {
     if (!selectedRes) return;
-
     try {
       const response = await fetch(`${BASE_URL}/api/user/update-status/${selectedRes.id}`, {
         method: 'PUT',
@@ -73,10 +70,9 @@ const CustomerReservations = ({ loggedInRestaurantId }: { loggedInRestaurantId?:
 
   const handleDeleteReservation = () => {
     if (!selectedRes) return;
-
     Alert.alert(
       'Cancel Reservation',
-      'Are you sure you want to cancel and remove this reservation? This action cannot be undone.',
+      'Are you sure you want to cancel and remove this reservation?',
       [
         { text: 'No, Keep It', style: 'cancel' },
         {
@@ -84,21 +80,16 @@ const CustomerReservations = ({ loggedInRestaurantId }: { loggedInRestaurantId?:
           style: 'destructive',
           onPress: async () => {
             try {
-              // UPDATED: Now calls the DELETE endpoint to permanently remove the reservation
-              const response = await fetch(
-                `${BASE_URL}/api/user/delete-reservation/${selectedRes.id}`,
-                {
-                  method: 'DELETE',
-                  headers: { 'Content-Type': 'application/json' },
-                }
-              );
+              const response = await fetch(`${BASE_URL}/api/user/delete-reservation/${selectedRes.id}`, {
+                method: 'DELETE',
+                headers: { 'Content-Type': 'application/json' },
+              });
 
               if (response.ok) {
-                // Remove from local list immediately
                 setReservations(prev => prev.filter(r => r.id !== selectedRes.id));
                 setResModalVisible(false);
                 setSelectedRes(null);
-                Alert.alert('Removed', 'Reservation has been cancelled and removed from the database.');
+                Alert.alert('Removed', 'Reservation has been cancelled and removed.');
               } else {
                 const data = await response.json();
                 Alert.alert('Error', data.message || 'Failed to cancel reservation.');
@@ -143,11 +134,9 @@ const CustomerReservations = ({ loggedInRestaurantId }: { loggedInRestaurantId?:
                 </Text>
               </View>
             </View>
-
             <Text style={styles.cardSubtitle}>
               {res.date} {res.time ? `• ${res.time}` : ''} • {res.guests} Guests
             </Text>
-
             <Text style={styles.clickHint}>Tap to view/edit</Text>
           </TouchableOpacity>
         ))
@@ -193,13 +182,6 @@ const CustomerReservations = ({ loggedInRestaurantId }: { loggedInRestaurantId?:
                       <Text style={styles.resDetailValue}>{selectedRes.notes || 'None'}</Text>
                     </View>
 
-                    <View style={styles.resDetailRow}>
-                      <Text style={styles.resDetailLabel}>Payment:</Text>
-                      <Text style={styles.resDetailValue}>
-                        {selectedRes.paymentMethod === 'bank' ? 'Bank Deposit' : selectedRes.paymentMethod === 'card' ? 'Card (Stripe)' : 'N/A'}
-                      </Text>
-                    </View>
-
                     <View style={[styles.resDetailRow, { borderBottomWidth: 0 }]}>
                       <Text style={styles.resDetailLabel}>Status:</Text>
                       <Text style={[styles.resDetailValue, { fontWeight: '700',
@@ -208,26 +190,26 @@ const CustomerReservations = ({ loggedInRestaurantId }: { loggedInRestaurantId?:
                       }]}>{selectedRes.status?.toUpperCase() || 'PENDING'}</Text>
                     </View>
 
-                    {/* Payment Slip Image */}
+                    {/* NEW: Displays the Receipt Image fetched from the BankDeposit collection */}
                     {selectedRes.paymentSlip ? (
                       <View style={styles.slipContainer}>
-                        <Text style={styles.slipLabel}>📄 Payment Slip</Text>
+                        <Text style={styles.slipLabel}>📄 Bank Deposit Receipt</Text>
                         <Image
                           source={{ uri: selectedRes.paymentSlip }}
                           style={styles.slipImage}
                           resizeMode="contain"
                         />
                       </View>
-                    ) : selectedRes.paymentMethod === 'bank' ? (
+                    ) : (
                       <View style={styles.slipContainer}>
-                        <Text style={[styles.slipLabel, { color: '#E65100' }]}>⚠️ No payment slip uploaded yet.</Text>
+                        <Text style={[styles.slipLabel, { color: '#E65100' }]}>⚠️ No payment receipt uploaded yet.</Text>
                       </View>
-                    ) : null}
+                    )}
 
                     {/* CONDITIONAL STATUS BUTTON RENDERING */}
-                    {selectedRes.status === 'paid' ? (
+                    {selectedRes.status === 'confirmed' || selectedRes.status === 'paid' ? (
                       <Text style={styles.statusMessage}>
-                        ✅ User has already paid for this reservation.
+                        ✅ This reservation is confirmed. No further action needed.
                       </Text>
                     ) : selectedRes.status === 'cancelled' ? (
                       <Text style={[styles.statusMessage, { color: '#C62828' }]}>
@@ -237,17 +219,13 @@ const CustomerReservations = ({ loggedInRestaurantId }: { loggedInRestaurantId?:
                       <>
                         <Text style={[styles.inputLabel, { marginTop: 16, textAlign: 'center' }]}>Manage Reservation</Text>
                         <View style={styles.statusActionRow}>
-                          {/* Confirm button — hidden if already confirmed */}
-                          {selectedRes.status !== 'confirmed' && (
-                            <TouchableOpacity
-                              style={[styles.statusUpdateBtn, { backgroundColor: '#E8F5E9', borderColor: '#4CAF50' }]}
-                              onPress={() => handleUpdateResStatus('confirmed')}
-                            >
-                              <Text style={[styles.statusUpdateText, { color: '#2E7D32' }]}>✓ Confirm</Text>
-                            </TouchableOpacity>
-                          )}
+                          <TouchableOpacity
+                            style={[styles.statusUpdateBtn, { backgroundColor: '#E8F5E9', borderColor: '#4CAF50' }]}
+                            onPress={() => handleUpdateResStatus('confirmed')}
+                          >
+                            <Text style={[styles.statusUpdateText, { color: '#2E7D32' }]}>✓ Confirm</Text>
+                          </TouchableOpacity>
 
-                          {/* Cancel & Remove button */}
                           <TouchableOpacity
                             style={[styles.statusUpdateBtn, { backgroundColor: '#FFEBEE', borderColor: '#F44336' }]}
                             onPress={handleDeleteReservation}
@@ -296,9 +274,9 @@ const styles = StyleSheet.create({
   resDetailRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 10, paddingBottom: 10, borderBottomWidth: 1, borderBottomColor: '#F0F0F0' },
   resDetailLabel: { fontSize: 14, color: '#666', flex: 1 },
   resDetailValue: { fontSize: 14, color: '#111', flex: 2, textAlign: 'right', marginLeft: 10 },
-  slipContainer: { marginTop: 14, marginBottom: 4, alignItems: 'center', backgroundColor: '#F9F9F9', borderRadius: 12, padding: 12, borderWidth: 1, borderColor: '#E0E0E0' },
+  slipContainer: { marginTop: 14, marginBottom: 14, alignItems: 'center', backgroundColor: '#F9F9F9', borderRadius: 12, padding: 12, borderWidth: 1, borderColor: '#E0E0E0' },
   slipLabel: { fontSize: 13, fontWeight: '600', color: '#444', marginBottom: 10 },
-  slipImage: { width: '100%', height: 200, borderRadius: 8 },
+  slipImage: { width: '100%', height: 250, borderRadius: 8 },
   statusMessage: { textAlign: 'center', color: '#2E7D32', fontWeight: 'bold', marginVertical: 12, fontSize: 14 },
   statusActionRow: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 10, gap: 8 },
   statusUpdateBtn: { flex: 1, paddingVertical: 12, borderRadius: 10, borderWidth: 1.5, alignItems: 'center' },
