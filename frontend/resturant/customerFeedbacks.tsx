@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import { StyleSheet, View, Text, ActivityIndicator } from 'react-native';
+import { StyleSheet, View, Text, ActivityIndicator, ScrollView, Image } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { BASE_URL } from '../api';
 
@@ -23,6 +23,7 @@ const CustomerFeedbacks = ({ loggedInRestaurantId }: { loggedInRestaurantId?: st
           customer: r.userId?.fullName || 'Anonymous Customer', 
           text: r.text,
           rating: r.rating,
+          images: r.images || [], // MAP THE IMAGES 
           date: new Date(r.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
         }));
         setFeedbacks(formattedFeedbacks);
@@ -55,6 +56,15 @@ const CustomerFeedbacks = ({ loggedInRestaurantId }: { loggedInRestaurantId?: st
             </View>
             <Text style={styles.feedbackDate}>{fb.date}</Text>
             <Text style={styles.feedbackText}>"{fb.text}"</Text>
+
+            {/* SHOW IMAGES UPLOADED BY CUSTOMER */}
+            {fb.images && fb.images.length > 0 && (
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.imageScrollRow}>
+                {fb.images.map((uri: string, idx: number) => (
+                  <Image key={idx} source={{ uri }} style={styles.feedbackImage} />
+                ))}
+              </ScrollView>
+            )}
           </View>
         ))
       ) : (
@@ -80,7 +90,10 @@ const styles = StyleSheet.create({
   feedbackDate: { fontSize: 12, color: '#A0A0A0', marginBottom: 8 },
   feedbackText: { fontSize: 14, color: '#4A4A4A', fontStyle: 'italic' },
   emptyContainer: { padding: 20, backgroundColor: '#FFF', borderRadius: 16, alignItems: 'center', borderWidth: 1, borderColor: '#F0F0F0', borderStyle: 'dashed' },
-  emptyText: { color: '#A0A0A0', fontSize: 15, fontStyle: 'italic' }
+  emptyText: { color: '#A0A0A0', fontSize: 15, fontStyle: 'italic' },
+  
+  imageScrollRow: { marginTop: 12, flexDirection: 'row' },
+  feedbackImage: { width: 70, height: 70, borderRadius: 8, marginRight: 8, backgroundColor: '#F0F0F0' }
 });
 
 export default CustomerFeedbacks;

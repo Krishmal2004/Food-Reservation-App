@@ -12,13 +12,11 @@ import {
   Alert,
   Image,
   ScrollView,
-  FlatList
 } from 'react-native';
 import { launchImageLibrary, ImageLibraryOptions } from 'react-native-image-picker';
 import { useFocusEffect } from '@react-navigation/native';
 import { BASE_URL } from '../api';
 
-// Accept userEmail as a prop
 const UserFeedbacks = ({ userEmail }: { userEmail?: string }) => {
   const [feedbacks, setFeedbacks] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -31,10 +29,9 @@ const UserFeedbacks = ({ userEmail }: { userEmail?: string }) => {
   // Edit State
   const [editRating, setEditRating] = useState(5);
   const [editText, setEditText] = useState('');
-  const [editImages, setEditImages] = useState<string[]>([]);  // base64 uri array
+  const [editImages, setEditImages] = useState<string[]>([]);  
   const [isUploadingImage, setIsUploadingImage] = useState(false);
 
-  // Fetch feedbacks from DB
   const fetchFeedbacks = async () => {
     if (!userEmail) return;
     try {
@@ -42,12 +39,12 @@ const UserFeedbacks = ({ userEmail }: { userEmail?: string }) => {
       const data = await response.json();
       
       if (response.ok && data.reviews) {
-        // Format data for our UI
         const formattedFeedbacks = data.reviews.map((r: any) => ({
           id: r._id,
           restaurant: r.restaurantId?.restaurantName || 'Unknown Restaurant',
           text: r.text,
           rating: r.rating,
+          images: r.images || [], // MAP THE IMAGES FROM BACKEND
           date: new Date(r.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
         }));
         setFeedbacks(formattedFeedbacks);
@@ -59,7 +56,6 @@ const UserFeedbacks = ({ userEmail }: { userEmail?: string }) => {
     }
   };
 
-  // Run this every time the screen comes into focus
   useFocusEffect(
     useCallback(() => {
       fetchFeedbacks();
@@ -77,7 +73,6 @@ const UserFeedbacks = ({ userEmail }: { userEmail?: string }) => {
     setModalVisible(true);
   };
 
-  // Image picker handler
   const pickImages = () => {
     if (editImages.length >= 3) {
       Alert.alert('Limit Reached', 'You can upload a maximum of 3 images.');
@@ -118,8 +113,6 @@ const UserFeedbacks = ({ userEmail }: { userEmail?: string }) => {
     }, 300);
   };
 
-  // Note: For actual delete/edit, you will need new backend routes (PUT/DELETE) later.
-  // For now, this just updates the local state so the UI works.
   const confirmDelete = async() => {
     if(!selectedFeedback) return;
     try {
@@ -199,6 +192,15 @@ const UserFeedbacks = ({ userEmail }: { userEmail?: string }) => {
             </View>
             
             <Text style={styles.feedbackText} numberOfLines={2}>"{fb.text}"</Text>
+
+            {/* SHOW SMALL THUMBNAILS ON THE CARD ITSELF (OPTIONAL) */}
+            {fb.images && fb.images.length > 0 && (
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 12 }}>
+                 {fb.images.map((uri: string, idx: number) => (
+                    <Image key={idx} source={{ uri }} style={{ width: 50, height: 50, borderRadius: 6, marginRight: 6 }} />
+                 ))}
+              </ScrollView>
+            )}
             
             <View style={styles.feedbackActions}>
               <TouchableOpacity style={[styles.actionPill, styles.viewPill]} onPress={() => openModal('view', fb)} activeOpacity={0.7}>
@@ -219,7 +221,6 @@ const UserFeedbacks = ({ userEmail }: { userEmail?: string }) => {
         </View>
       )}
 
-      {/* KEEP ALL YOUR EXISTING MODAL CODE EXACTLY THE SAME BELOW THIS LINE */}
       <Modal animationType="fade" transparent={true} visible={modalVisible} onRequestClose={closeModal}>
         <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.modalOverlay}>
           <View style={styles.modalContainer}>
@@ -340,7 +341,6 @@ const UserFeedbacks = ({ userEmail }: { userEmail?: string }) => {
   );
 };
 
-// KEEP YOUR EXACT SAME STYLES HERE...
 const styles = StyleSheet.create({
   sectionContainer: { marginBottom: 30 },
   sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end', paddingHorizontal: 24, marginBottom: 16 },
@@ -352,7 +352,7 @@ const styles = StyleSheet.create({
   feedbackDate: { fontSize: 12, color: '#888888', fontWeight: '500' },
   ratingBadge: { backgroundColor: '#FFF8E1', paddingHorizontal: 10, paddingVertical: 6, borderRadius: 12, marginLeft: 10 },
   ratingText: { color: '#F39C12', fontWeight: '800', fontSize: 12 },
-  feedbackText: { fontSize: 14, color: '#4A4A4A', lineHeight: 22, fontStyle: 'italic', marginBottom: 18 },
+  feedbackText: { fontSize: 14, color: '#4A4A4A', lineHeight: 22, fontStyle: 'italic', marginBottom: 12 },
   feedbackActions: { flexDirection: 'row', justifyContent: 'space-between', gap: 10 },
   actionPill: { flex: 1, paddingVertical: 10, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
   actionText: { fontSize: 13, fontWeight: '700', letterSpacing: 0.3 },
@@ -398,7 +398,6 @@ const styles = StyleSheet.create({
   destructiveButtonText: { color: '#FFFFFF', fontSize: 16, fontWeight: '700' },
   deleteIconContainer: { alignItems: 'center', marginBottom: 16, backgroundColor: '#FDEDEC', width: 64, height: 64, borderRadius: 32, justifyContent: 'center', alignSelf: 'center' },
   deleteIconText: { fontSize: 30 },
-  // Image upload styles
   imageSection: { marginBottom: 20 },
   imageScrollRow: { flexDirection: 'row', marginTop: 8 },
   viewImage: { width: 120, height: 100, borderRadius: 12, marginRight: 10 },

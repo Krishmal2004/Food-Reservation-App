@@ -25,12 +25,18 @@ const reviewSchema = new mongoose.Schema({
         required: true,
         trim: true,
     },
+    images: {
+        type: [String],
+        default: [],
+    }
 },{timestamps: true});
+
 const Review = mongoose.model('Review', reviewSchema);
 
 router.post('/add-review', async (req,res) =>{
     try {
-        const {userEmail, restaurantId, rating, text} = req.body;
+        // Extract images from req.body
+        const {userEmail, restaurantId, rating, text, images} = req.body;
         
         if(!userEmail || !restaurantId || !rating || !text) {
             return res.status(400).json({message: 'All fields are required'});
@@ -47,7 +53,8 @@ router.post('/add-review', async (req,res) =>{
             userId: existingUser._id, 
             restaurantId,
             rating,
-            text
+            text,
+            images: images || [] 
         });
         
         await newReview.save();
@@ -61,6 +68,7 @@ router.post('/add-review', async (req,res) =>{
         res.status(500).json({message: 'Server error'});
     }
 });
+
 // Get Reviews
 router.get('/show-reviews/:email', async (req, res) => {
     try {
@@ -76,6 +84,7 @@ router.get('/show-reviews/:email', async (req, res) => {
         res.status(500).json({ message: 'Server error' });
     }
 });
+
 // Get Reviews for restaurant
 router.get('/restaurant-reviews/:restaurantId', async (req, res) => {
     try {
@@ -87,19 +96,23 @@ router.get('/restaurant-reviews/:restaurantId', async (req, res) => {
         res.status(500).json({ message: 'Server error' });
     }
 });
+
 //update review 
 router.put('/update-review/:id', async(req,res) => {
     try {
         const {id} = req.params;
-        const {rating,text} = req.body;
+        const {rating, text, images} = req.body;
+        
         if(!rating || !text) {
             return res.status(400).json({message: 'All fields are required'});
         }
+        
         const updatedReview = await Review.findByIdAndUpdate(
             id,
-            {rating,text},
-            {new:true}
+            { rating, text, images: images || [] }, 
+            { new:true }
         );
+        
         if(!updatedReview) {
             return res.status(404).json({message: 'Review not found'});
         }
@@ -111,6 +124,7 @@ router.put('/update-review/:id', async(req,res) => {
                 restaurantId: updatedReview.restaurantId,
                 rating: updatedReview.rating,
                 text: updatedReview.text,
+                images: updatedReview.images,
             }
         });
     } catch (error) {
@@ -118,6 +132,7 @@ router.put('/update-review/:id', async(req,res) => {
         res.status(500).json({message: 'Server error'});
     }
 });
+
 // Delete review 
 router.delete('/delete-review/:id', async(req,res) =>{
     try {
@@ -132,4 +147,5 @@ router.delete('/delete-review/:id', async(req,res) =>{
         res.status(500).json({message: 'Server error'});
     }
 })
+
 module.exports = router;
