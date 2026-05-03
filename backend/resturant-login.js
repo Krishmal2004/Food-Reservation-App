@@ -21,29 +21,41 @@ const restuarantSchema = new mongoose.Schema({
         type: String,
         required: true,
     },
+    approvalFormImage: {
+        type: String,
+        required: true, // Added to match frontend requirement
+    }
 },{timestamps: true});
+
 const resturant = mongoose.model('Resturant_login', restuarantSchema);
 
 //Resturant Registration
 router.post('/register-restaurant', async (req,res)=>{
     try {
-        const {restaurantName,email,password} = req.body;
-        if(!restaurantName || !email || !password) {
+        // Extract approvalFormImage from request body
+        const {restaurantName, email, password, approvalFormImage} = req.body;
+        
+        // Ensure all required fields are present
+        if(!restaurantName || !email || !password || !approvalFormImage) {
             return res.status(400).json({message: 'All fields are required'});
         }
         const existingResturant = await resturant.findOne({email});
         if(existingResturant) {
             return res.status(400).json({message: 'Resturant already exists'});
         }
+        
         //Password Hashing
         const salt = await bcrypt.genSalt(10);
         const hashedPassword = await bcrypt.hash(password, salt);
 
+        // Include approvalFormImage in the new restaurant document
         const newResturant = new resturant({
             restaurantName,
             email,
             password: hashedPassword,
+            approvalFormImage,
         });
+        
         await newResturant.save();
         res.status(201).json({
             message: 'Resturant registered successfully',
@@ -51,7 +63,7 @@ router.post('/register-restaurant', async (req,res)=>{
                 id: newResturant._id,
                 restaurantName: newResturant.restaurantName,
                 email: newResturant.email,
-                password: newResturant.password,
+                // Do not send password or heavy base64 image back in response
             }
         });
     } catch (error) {
@@ -123,6 +135,7 @@ router.put('/update-resturant-profile/:id', async (req, res) => {
         res.status(500).json({ message: 'Server error' });
     }
 });
+
 //Get the All resturant 
 router.get('/all-resturants', async (req,res) =>{
     try {
@@ -133,4 +146,5 @@ router.get('/all-resturants', async (req,res) =>{
         res.status(500).json({ message: 'Server error' });
     }
 });
+
 module.exports = router;
