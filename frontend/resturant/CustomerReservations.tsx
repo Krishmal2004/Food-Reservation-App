@@ -142,7 +142,6 @@ const CustomerReservations = ({ loggedInRestaurantId }: { loggedInRestaurantId?:
         ))
       )}
 
-      {/* Reservation Details Modal */}
       <Modal visible={resModalVisible} animationType="fade" transparent={true}>
         <TouchableWithoutFeedback onPress={() => setResModalVisible(false)}>
           <View style={styles.modalOverlay}>
@@ -190,7 +189,6 @@ const CustomerReservations = ({ loggedInRestaurantId }: { loggedInRestaurantId?:
                       }]}>{selectedRes.status?.toUpperCase() || 'PENDING'}</Text>
                     </View>
 
-                    {/* NEW: Displays the Receipt Image fetched from the BankDeposit collection */}
                     {selectedRes.paymentSlip ? (
                       <View style={styles.slipContainer}>
                         <Text style={styles.slipLabel}>📄 Bank Deposit Receipt</Text>
@@ -206,7 +204,6 @@ const CustomerReservations = ({ loggedInRestaurantId }: { loggedInRestaurantId?:
                       </View>
                     )}
 
-                    {/* CONDITIONAL STATUS BUTTON RENDERING */}
                     {selectedRes.status === 'confirmed' || selectedRes.status === 'paid' ? (
                       <Text style={styles.statusMessage}>
                         ✅ This reservation is confirmed. No further action needed.
@@ -221,9 +218,15 @@ const CustomerReservations = ({ loggedInRestaurantId }: { loggedInRestaurantId?:
                         <View style={styles.statusActionRow}>
                           <TouchableOpacity
                             style={[styles.statusUpdateBtn, { backgroundColor: '#E8F5E9', borderColor: '#4CAF50' }]}
-                            onPress={() => handleUpdateResStatus('confirmed')}
+                            onPress={() => {
+                              // If there is a payment slip or status is deposit_pending, confirming sets status to 'paid'
+                              const isBankDeposit = selectedRes.paymentSlip || selectedRes.status === 'deposit_pending';
+                              handleUpdateResStatus(isBankDeposit ? 'paid' : 'confirmed');
+                            }}
                           >
-                            <Text style={[styles.statusUpdateText, { color: '#2E7D32' }]}>✓ Confirm</Text>
+                            <Text style={[styles.statusUpdateText, { color: '#2E7D32' }]}>
+                              {selectedRes.paymentSlip || selectedRes.status === 'deposit_pending' ? '✓ Confirm Payment' : '✓ Confirm'}
+                            </Text>
                           </TouchableOpacity>
 
                           <TouchableOpacity
@@ -280,7 +283,7 @@ const styles = StyleSheet.create({
   statusMessage: { textAlign: 'center', color: '#2E7D32', fontWeight: 'bold', marginVertical: 12, fontSize: 14 },
   statusActionRow: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 10, gap: 8 },
   statusUpdateBtn: { flex: 1, paddingVertical: 12, borderRadius: 10, borderWidth: 1.5, alignItems: 'center' },
-  statusUpdateText: { fontSize: 14, fontWeight: '700' }
+  statusUpdateText: { fontSize: 14, fontWeight: '700', textAlign: 'center' }
 });
 
 export default CustomerReservations;
