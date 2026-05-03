@@ -15,6 +15,7 @@ import {
   TextInput,
   ActivityIndicator
 } from 'react-native';
+import { launchImageLibrary, ImageLibraryOptions } from 'react-native-image-picker';
 import { BASE_URL } from '../api';
 
 const RestaurantDetails = ({ route, navigation }: any) => {
@@ -23,6 +24,8 @@ const RestaurantDetails = ({ route, navigation }: any) => {
   const [feedbackModalVisible, setFeedbackModalVisible] = useState(false);
   const [rating, setRating] = useState(5);
   const [reviewText, setReviewText] = useState('');
+  const [reviewImages, setReviewImages] = useState<string[]>([]);
+  const [isPickingImage, setIsPickingImage] = useState(false);
   
   const [foodPackages, setFoodPackages] = useState<any[]>([]);
   const [isLoadingPackages, setIsLoadingPackages] = useState(true);
@@ -50,6 +53,38 @@ const RestaurantDetails = ({ route, navigation }: any) => {
     fetchFoodPackages();
   }, [restaurant?.id]);
 
+  const pickImages = () => {
+    if (reviewImages.length >= 3) {
+      Alert.alert('Limit Reached', 'You can upload a maximum of 3 images.');
+      return;
+    }
+    const options: ImageLibraryOptions = {
+      mediaType: 'photo',
+      selectionLimit: 3 - reviewImages.length,
+      quality: 0.7,
+      includeBase64: true,
+    };
+    setIsPickingImage(true);
+    launchImageLibrary(options, (response) => {
+      setIsPickingImage(false);
+      if (response.didCancel) return;
+      if (response.errorCode) {
+        Alert.alert('Error', response.errorMessage || 'Could not open image library.');
+        return;
+      }
+      if (response.assets) {
+        const newUris = response.assets
+          .filter(a => a.base64)
+          .map(a => `data:image/jpeg;base64,${a.base64}`);
+        setReviewImages(prev => [...prev, ...newUris].slice(0, 3));
+      }
+    });
+  };
+
+  const removeReviewImage = (index: number) => {
+    setReviewImages(prev => prev.filter((_, i) => i !== index));
+  };
+
   const handleFeedbackSubmit = async () => {
     if(!reviewText.trim()) {
       Alert.alert("Validation Error", "Please enter a review before submitting.");
@@ -66,7 +101,8 @@ const RestaurantDetails = ({ route, navigation }: any) => {
           userEmail: userEmail,
           restaurantId: restaurant.id,
           rating: rating,
-          text: reviewText
+          text: reviewText,
+          images: reviewImages,
         }),
       });
       
@@ -78,6 +114,7 @@ const RestaurantDetails = ({ route, navigation }: any) => {
         setTimeout(()=>{
           setRating(5);
           setReviewText('');
+          setReviewImages([]);
         },300);
       } else {
         Alert.alert("Database Error", data.message || "Something went wrong");
@@ -134,6 +171,7 @@ const RestaurantDetails = ({ route, navigation }: any) => {
              onPress={() => {
                setRating(5);
                setReviewText('');
+               setReviewImages([]);
                setFeedbackModalVisible(true);
              }}
            >
@@ -268,6 +306,42 @@ const RestaurantDetails = ({ route, navigation }: any) => {
               />
             </View>
 
+            {/* Image Upload Section */}
+            <View style={styles.inputGroup}>
+              <Text style={styles.inputLabel}>Photos ({reviewImages.length}/3)  <Text style={styles.optionalTag}>Optional</Text></Text>
+              <View style={styles.imageUploadRow}>
+                {reviewImages.map((uri, idx) => (
+                  <View key={idx} style={styles.imageThumbWrapper}>
+                    <Image source={{ uri }} style={styles.imageThumb} />
+                    <TouchableOpacity
+                      style={styles.removeImageBtn}
+                      onPress={() => removeReviewImage(idx)}
+                      activeOpacity={0.8}
+                    >
+                      <Text style={styles.removeImageBtnText}>✕</Text>
+                    </TouchableOpacity>
+                  </View>
+                ))}
+                {reviewImages.length < 3 && (
+                  <TouchableOpacity
+                    style={styles.addImageBtn}
+                    onPress={pickImages}
+                    activeOpacity={0.7}
+                    disabled={isPickingImage}
+                  >
+                    {isPickingImage ? (
+                      <ActivityIndicator size="small" color="#D68910" />
+                    ) : (
+                      <>
+                        <Text style={styles.addImageIcon}>📷</Text>
+                        <Text style={styles.addImageText}>Add Photo</Text>
+                      </>
+                    )}
+                  </TouchableOpacity>
+                )}
+              </View>
+            </View>
+
             <View style={styles.modalButtonRow}>
               <TouchableOpacity style={[styles.modalButtonRowBtn, styles.cancelButton]} onPress={() => setFeedbackModalVisible(false)}>
                 <Text style={styles.cancelButtonText}>Cancel</Text>
@@ -335,6 +409,16 @@ const styles = StyleSheet.create({
   cancelButtonText: { color: '#7F8C8D', fontSize: 16, fontWeight: '700' },
   saveButton: { backgroundColor: '#27AE60' },
   saveButtonText: { color: '#FFFFFF', fontSize: 16, fontWeight: '700' },
+  // Image upload styles
+  optionalTag: { fontSize: 12, color: '#A0A0A0', fontWeight: '400' },
+  imageUploadRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginTop: 4 },
+  imageThumbWrapper: { position: 'relative', width: 80, height: 80 },
+  imageThumb: { width: 80, height: 80, borderRadius: 10, backgroundColor: '#F0F0F0' },
+  removeImageBtn: { position: 'absolute', top: -6, right: -6, backgroundColor: '#E74C3C', width: 22, height: 22, borderRadius: 11, alignItems: 'center', justifyContent: 'center', zIndex: 10 },
+  removeImageBtnText: { color: '#FFFFFF', fontSize: 11, fontWeight: '800' },
+  addImageBtn: { width: 80, height: 80, borderRadius: 10, borderWidth: 2, borderColor: '#D68910', borderStyle: 'dashed', alignItems: 'center', justifyContent: 'center', backgroundColor: '#FEF5E7', gap: 4 },
+  addImageIcon: { fontSize: 22 },
+  addImageText: { fontSize: 10, fontWeight: '600', color: '#D68910' },
 });
 
 export default RestaurantDetails;
