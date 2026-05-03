@@ -21,7 +21,7 @@ import { launchImageLibrary, ImageLibraryOptions } from 'react-native-image-pick
 import CustomerReservations from './resturant/CustomerReservations';
 import FoodPackages from './resturant/FoodPackages';
 import FunctionHallPackages from './resturant/FunctionHallPackages';
-import CustomerFeedbacks from './resturant/CustomerFeedbacks';
+import CustomerFeedbacks from './resturant/customerFeedbacks';
 import CustomerEventReservations from './resturant/CustomerEventReservations';
 import { BASE_URL } from './api';
 const RestaurantDashboard = ({ route, navigation }: { route: any, navigation: any }) => {
