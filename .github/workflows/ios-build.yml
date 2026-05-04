@@ -2,14 +2,13 @@ name: iOS Build
 
 on:
   push:
-    branches: [ "tech" ]
+    branches: [ "main", "tech" ]
   pull_request:
-    branches: [ "tech" ]
+    branches: [ "main", "tech" ]
 
 jobs:
   build:
     name: Build iOS App
-    # iOS builds must run on a macOS environment
     runs-on: macos-latest
 
     steps:
@@ -19,15 +18,13 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20' # Use the Node version required for your project
+          node-version: '24'
 
       - name: Install npm dependencies
         run: npm install
-        # If you use yarn, use: yarn install
 
       - name: Install CocoaPods
         run: cd ios && pod install
-        # This step assumes your Xcode project is in the 'ios' folder
 
       - name: Build iOS App
         run: |
@@ -36,6 +33,5 @@ jobs:
             -scheme Food_Delivery_App \
             -configuration Release \
             -sdk iphonesimulator \
-            -destination 'platform=iOS Simulator,name=iPhone 15,OS=latest' \
+            -destination 'platform=iOS Simulator,name=iPhone 16,OS=latest' \
             build
-        # Replace 'YourAppName' with your actual workspace and scheme names
