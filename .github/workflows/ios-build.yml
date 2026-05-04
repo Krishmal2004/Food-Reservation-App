@@ -32,7 +32,7 @@ jobs:
       - name: Build iOS App
         run: |
           cd ios
-          xcodebuild -workspace YourAppName.xcworkspace \
+          xcodebuild -workspace Food_Delivery_App.xcworkspace \
             -scheme Food_Delivery_App \
             -configuration Release \
             -sdk iphonesimulator \
