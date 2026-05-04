@@ -33,7 +33,7 @@ jobs:
         run: |
           cd ios
           xcodebuild -workspace YourAppName.xcworkspace \
-            -scheme YourAppName \
+            -scheme Food_Delivery_App \
             -configuration Release \
             -sdk iphonesimulator \
             -destination 'platform=iOS Simulator,name=iPhone 15,OS=latest' \
